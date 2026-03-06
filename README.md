@@ -18,8 +18,9 @@
 
 ### ⚡ 快速配置
 
-- 快速添加模型提供商（预置 SiliconFlow、Kimi、Gemini、Claude、OpenAI 等）
+- 快速添加模型提供商（预置 11 家：硅基流动 SiliconFlow、Kimi Code、Google Gemini、OpenAI GPT、Anthropic Claude、MiniMax、xAI Grok、OpenRouter、智谱 Coding Plan、方舟 Coding Plan、百炼 Coding Plan）
 - 快速添加消息频道（Telegram / 飞书一键配置 + Agent 绑定）
+- 视觉模型自动标识
 
 ### 🛠 UI 增强
 
@@ -136,7 +137,7 @@ openclaw config init
 }
 ```
 
-启动网关后访问 `http://localhost:19001` 进入控制面板。
+启动网关后访问 `http://127.0.0.1:18789` 进入控制面板。
 
 ## 🔄 更新
 
