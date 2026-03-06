@@ -66,13 +66,19 @@ node --version
 
 ### macOS / Linux
 
-#### 方式一：一键安装（推荐）
+#### 方式一：直接安装（最简单）
+
+```bash
+npm install -g https://github.com/josephxie1/openclaw-UI--Chinese/releases/download/v1.0.0/openclaw-2026.3.2.tgz
+```
+
+#### 方式二：一键脚本安装（自动检测并安装 Node.js）
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/josephxie1/openclaw-UI--Chinese/main/scripts/install-remote.sh | bash
 ```
 
-#### 方式二：手动下载安装
+#### 方式三：手动下载安装
 
 从 [Releases](https://github.com/josephxie1/openclaw-UI--Chinese/releases) 下载最新的 `.tgz` 文件，然后：
 
@@ -102,7 +108,13 @@ npm install -g openclaw-*.tgz
 
 ### Windows
 
-#### 方式一：一键安装（推荐）
+#### 方式一：直接安装（最简单）
+
+```powershell
+npm install -g https://github.com/josephxie1/openclaw-UI--Chinese/releases/download/v1.0.0/openclaw-2026.3.2.tgz
+```
+
+#### 方式二：一键脚本安装（自动检测并安装 Node.js）
 
 以 **管理员身份** 打开 PowerShell，运行：
 
@@ -110,7 +122,7 @@ npm install -g openclaw-*.tgz
 iwr -useb https://raw.githubusercontent.com/josephxie1/openclaw-UI--Chinese/main/scripts/install-remote.ps1 | iex
 ```
 
-#### 方式二：手动下载安装
+#### 方式三：手动下载安装
 
 1. 从 [Releases](https://github.com/josephxie1/openclaw-UI--Chinese/releases) 下载最新的 `.tgz` 文件
 2. 以 **管理员身份** 打开 PowerShell 或 CMD，运行：
