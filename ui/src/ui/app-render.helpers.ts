@@ -1,16 +1,23 @@
 import { html } from "lit";
-import { repeat } from "lit/directives/repeat.js";
 import { t } from "../i18n/index.ts";
 import { refreshChat } from "./app-chat.ts";
 import { syncUrlWithSessionKey } from "./app-settings.ts";
 import type { AppViewState } from "./app-view-state.ts";
 import { OpenClawApp } from "./app.ts";
+import { renderDropdown, type DropdownItem } from "./components/dropdown.ts";
 import { ChatState, loadChatHistory } from "./controllers/chat.ts";
 import { icons } from "./icons.ts";
 import { iconForTab, pathForTab, titleForTab, type Tab } from "./navigation.ts";
 import type { ThemeTransitionContext } from "./theme-transition.ts";
 import type { ThemeMode } from "./theme.ts";
 import type { SessionsListResult } from "./types.ts";
+
+let sessionDropdownOpen = false;
+let _appRef: { requestUpdate(): void } | null = null;
+
+function requestAppUpdate() {
+  _appRef?.requestUpdate();
+}
 
 type SessionDefaultsSnapshot = {
   mainSessionKey?: string;
@@ -123,6 +130,19 @@ function renderCronFilterIcon(hiddenCount: number) {
 }
 
 export function renderChatControls(state: AppViewState) {
+  // Store ref for requestAppUpdate and click-outside-to-close
+  if (!_appRef) {
+    _appRef = state as unknown as { requestUpdate(): void };
+    if (typeof window !== "undefined") {
+      window.addEventListener("click", () => {
+        if (sessionDropdownOpen) {
+          sessionDropdownOpen = false;
+          requestAppUpdate();
+        }
+      });
+    }
+  }
+  _appRef = state as unknown as { requestUpdate(): void };
   const mainSessionKey = resolveMainSessionKey(state.hello, state.sessionsResult);
   const hideCron = state.sessionsHideCron ?? true;
   const hiddenCronCount = hideCron
@@ -174,43 +194,44 @@ export function renderChatControls(state: AppViewState) {
   `;
   return html`
     <div class="chat-controls">
-      <label class="field chat-controls__session">
-        <select
-          .value=${state.sessionKey}
-          ?disabled=${!state.connected}
-          @change=${(e: Event) => {
-            const next = (e.target as HTMLSelectElement).value;
-            state.sessionKey = next;
-            state.chatMessage = "";
-            state.chatStream = null;
-            (state as unknown as OpenClawApp).chatStreamStartedAt = null;
-            state.chatRunId = null;
-            (state as unknown as OpenClawApp).resetToolStream();
-            (state as unknown as OpenClawApp).resetChatScroll();
-            state.applySettings({
-              ...state.settings,
-              sessionKey: next,
-              lastActiveSessionKey: next,
-            });
-            void state.loadAssistantIdentity();
-            syncUrlWithSessionKey(
-              state as unknown as Parameters<typeof syncUrlWithSessionKey>[0],
-              next,
-              true,
-            );
-            void loadChatHistory(state as unknown as ChatState);
-          }}
-        >
-          ${repeat(
-            sessionOptions,
-            (entry) => entry.key,
-            (entry) =>
-              html`<option value=${entry.key} title=${entry.key}>
-                ${entry.displayName ?? entry.key}
-              </option>`,
-          )}
-        </select>
-      </label>
+      ${renderDropdown({
+        value: state.sessionKey,
+        items: sessionOptions.map(
+          (entry): DropdownItem => ({
+            value: entry.key,
+            label: entry.displayName ?? entry.key,
+          }),
+        ),
+        open: sessionDropdownOpen,
+        disabled: !state.connected,
+        onSelect: (next: string) => {
+          sessionDropdownOpen = false;
+          state.sessionKey = next;
+          state.chatMessage = "";
+          state.chatStream = null;
+          (state as unknown as OpenClawApp).chatStreamStartedAt = null;
+          state.chatRunId = null;
+          (state as unknown as OpenClawApp).resetToolStream();
+          (state as unknown as OpenClawApp).resetChatScroll();
+          state.applySettings({
+            ...state.settings,
+            sessionKey: next,
+            lastActiveSessionKey: next,
+          });
+          void state.loadAssistantIdentity();
+          syncUrlWithSessionKey(
+            state as unknown as Parameters<typeof syncUrlWithSessionKey>[0],
+            next,
+            true,
+          );
+          void loadChatHistory(state as unknown as ChatState);
+          requestAppUpdate();
+        },
+        onToggle: () => {
+          sessionDropdownOpen = !sessionDropdownOpen;
+          requestAppUpdate();
+        },
+      })}
       <button
         class="btn btn--sm btn--icon"
         ?disabled=${state.chatLoading || !state.connected}

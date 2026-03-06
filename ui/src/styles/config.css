@@ -1844,15 +1844,12 @@
 
 .models-page {
   display: flex;
-  justify-content: center;
-  padding: 32px 24px;
   min-height: 100%;
   overflow-y: auto;
 }
 
 .models-page .quick-add-content {
   width: 100%;
-  max-width: 720px;
   padding: 28px 32px;
   background: var(--card);
   border: 1px solid var(--border);
