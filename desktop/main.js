@@ -286,8 +286,12 @@ function startGateway(extraArgs = [], customHome = null) {
     if (!isQuitting && !isRestarting) {
       // Gateway self-restart (SIGUSR1) exits with code 0 and spawns its own
       // replacement. Check if the port is already taken before auto-restarting.
+      // Retry multiple times since gateway startup can take 2-3 seconds.
       const checkUrl = GATEWAY_URL_ACTUAL || GATEWAY_URL;
+      let attempts = 0;
+      const maxAttempts = 3;
       const checkRestart = () => {
+        attempts++;
         const req = http.get(checkUrl + "/api/v1/status", (res) => {
           // Port is alive — gateway self-restarted, just reconnect the window
           console.log("[desktop] Gateway self-restarted, reconnecting window...");
@@ -297,26 +301,37 @@ function startGateway(extraArgs = [], customHome = null) {
           req.destroy();
         });
         req.on("error", () => {
-          // Port not in use — genuine crash, auto-restart
-          console.log("[desktop] Gateway crashed, auto-restarting in 2s...");
-          setTimeout(() => {
+          if (attempts < maxAttempts) {
+            // Retry after 2 seconds
+            console.log(
+              "[desktop] Port not ready yet, retrying... (" + attempts + "/" + maxAttempts + ")",
+            );
+            setTimeout(checkRestart, 2000);
+          } else {
+            // Port not in use after retries — genuine crash, auto-restart
+            console.log("[desktop] Gateway crashed, auto-restarting...");
             if (!isQuitting) {
               startGateway(lastGatewayArgs, lastGatewayHome);
             }
-          }, 2000);
+          }
         });
         req.setTimeout(2000, () => {
           req.destroy();
-          console.log("[desktop] Gateway crashed (timeout), auto-restarting in 2s...");
-          setTimeout(() => {
+          if (attempts < maxAttempts) {
+            console.log(
+              "[desktop] Port check timeout, retrying... (" + attempts + "/" + maxAttempts + ")",
+            );
+            setTimeout(checkRestart, 2000);
+          } else {
+            console.log("[desktop] Gateway crashed (timeout), auto-restarting...");
             if (!isQuitting) {
               startGateway(lastGatewayArgs, lastGatewayHome);
             }
-          }, 2000);
+          }
         });
       };
-      // Small delay to let the self-restarted process bind the port
-      setTimeout(checkRestart, 1000);
+      // Wait 2 seconds before first check (gateway needs time to bind port)
+      setTimeout(checkRestart, 2000);
     }
   });
 }
