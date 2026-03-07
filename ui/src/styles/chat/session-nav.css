@@ -1,0 +1,70 @@
+/* =============================================
+   SESSION LIST IN SIDEBAR
+   ============================================= */
+
+.session-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 4px 0 8px;
+    margin-top: 2px;
+}
+
+.session-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 12px 6px 32px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.session-item:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+.session-item--active {
+    color: var(--text);
+    font-weight: 500;
+    border-left: 2px solid var(--accent);
+    padding-left: 30px;
+}
+
+.session-item__name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.session-item__time {
+    flex-shrink: 0;
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+/* Scrollbar styling */
+.session-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.session-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+}
+
+/* Collapsed nav hides session text */
+.nav--collapsed .session-list {
+    display: none;
+}

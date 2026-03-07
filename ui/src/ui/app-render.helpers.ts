@@ -404,6 +404,21 @@ export function parseSessionKey(key: string): SessionKeyInfo {
     }
   }
 
+  // ── Web session (web:<timestamp> or agent:<x>:web:<timestamp>) ──
+  const webMatch = key.match(/(?:^|:)web:(\d{10,})$/);
+  if (webMatch) {
+    const ts = Number(webMatch[1]);
+    const date = new Date(ts);
+    const dateStr = date.toLocaleDateString([], { month: "numeric", day: "numeric" });
+    const timeStr = date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    return { prefix: "", fallbackName: `Chat · ${dateStr} ${timeStr}` };
+  }
+
+  // ── Heartbeat ──
+  if (normalized === "heartbeat") {
+    return { prefix: "", fallbackName: "Heartbeat" };
+  }
+
   // ── Unknown — return key as-is ───────────────────
   return { prefix: "", fallbackName: key };
 }

@@ -4,13 +4,15 @@ import { t } from "../i18n/index.ts";
 import { refreshChatAvatar } from "./app-chat.ts";
 import { renderUsageTab } from "./app-render-usage-tab.ts";
 import { renderChatControls, renderTab, renderThemeToggle } from "./app-render.helpers.ts";
+import { resolveSessionDisplayName, isCronSessionKey } from "./app-render.helpers.ts";
+import { syncUrlWithSessionKey } from "./app-settings.ts";
 import type { AppViewState } from "./app-view-state.ts";
 import { loadAgentFileContent, loadAgentFiles, saveAgentFile } from "./controllers/agent-files.ts";
 import { loadAgentIdentities, loadAgentIdentity } from "./controllers/agent-identity.ts";
 import { loadAgentSkills } from "./controllers/agent-skills.ts";
 import { loadAgents, loadToolsCatalog } from "./controllers/agents.ts";
 import { loadChannels } from "./controllers/channels.ts";
-import { loadChatHistory } from "./controllers/chat.ts";
+import { ChatState, loadChatHistory } from "./controllers/chat.ts";
 import {
   applyConfig,
   loadConfig,
@@ -141,6 +143,85 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
     return candidate;
   }
   return identity?.avatarUrl;
+}
+
+const MAX_SIDEBAR_SESSIONS = 20;
+
+function formatRelativeTime(ts: number | null): string {
+  if (!ts) {
+    return "";
+  }
+  const diffMs = Date.now() - ts;
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 1) {
+    return "just now";
+  }
+  if (mins < 60) {
+    return `${mins}m`;
+  }
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) {
+    return `${hours}h`;
+  }
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+}
+
+function renderSessionList(state: AppViewState) {
+  const sessions = state.sessionsResult?.sessions;
+  if (!sessions || sessions.length === 0) {
+    return nothing;
+  }
+
+  const hideCron = state.sessionsHideCron ?? true;
+  const filtered = sessions
+    .filter((s) => !hideCron || !isCronSessionKey(s.key))
+    .slice(0, MAX_SIDEBAR_SESSIONS);
+
+  if (filtered.length === 0) {
+    return nothing;
+  }
+
+  return html`
+    <div class="session-list">
+      ${filtered.map((session) => {
+        const isActive = session.key === state.sessionKey;
+        const name = resolveSessionDisplayName(session.key, session);
+        const time = formatRelativeTime(session.updatedAt);
+        return html`
+          <button
+            class="session-item ${isActive ? "session-item--active" : ""}"
+            @click=${() => {
+              if (isActive) {
+                return;
+              }
+              state.sessionKey = session.key;
+              state.chatMessage = "";
+              state.chatStream = null;
+              state.chatRunId = null;
+              state.applySettings({
+                ...state.settings,
+                sessionKey: session.key,
+                lastActiveSessionKey: session.key,
+              });
+              void state.loadAssistantIdentity();
+              syncUrlWithSessionKey(
+                state as unknown as Parameters<typeof syncUrlWithSessionKey>[0],
+                session.key,
+                true,
+              );
+              void loadChatHistory(state as unknown as ChatState);
+              state.setTab("chat");
+            }}
+            title=${name}
+          >
+            <span class="session-item__name">${name}</span>
+            ${time ? html`<span class="session-item__time">${time}</span>` : nothing}
+          </button>
+        `;
+      })}
+    </div>
+  `;
 }
 
 export function renderApp(state: AppViewState) {
@@ -289,6 +370,7 @@ export function renderApp(state: AppViewState) {
               <div class="nav-group__items">
                 ${group.tabs.map((tab) => renderTab(state, tab))}
               </div>
+              ${group.label === "chat" && !isGroupCollapsed ? renderSessionList(state) : nothing}
             </div>
           `;
         })}
@@ -1636,7 +1718,26 @@ export function renderApp(state: AppViewState) {
                 canAbort: Boolean(state.chatRunId),
                 onAbort: () => void state.handleAbortChat(),
                 onQueueRemove: (id) => state.removeQueuedMessage(id),
-                onNewSession: () => state.handleSendChat("/new", { restoreDraft: true }),
+                onNewSession: () => {
+                  const newKey = `web:${Date.now()}`;
+                  state.sessionKey = newKey;
+                  state.chatMessage = "";
+                  state.chatStream = null;
+                  state.chatRunId = null;
+                  state.chatMessages = [];
+                  state.chatToolMessages = [];
+                  state.applySettings({
+                    ...state.settings,
+                    sessionKey: newKey,
+                    lastActiveSessionKey: newKey,
+                  });
+                  void state.loadAssistantIdentity();
+                  syncUrlWithSessionKey(
+                    state as unknown as Parameters<typeof syncUrlWithSessionKey>[0],
+                    newKey,
+                    true,
+                  );
+                },
                 showNewMessages: state.chatNewMessagesBelow && !state.chatManualRefreshInFlight,
                 onScrollToBottom: () => state.scrollToBottom(),
                 // Sidebar props for tool output viewing
