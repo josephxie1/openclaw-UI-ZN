@@ -676,7 +676,7 @@ app
         }
         const independentConfig = path.join(independentConfigDir, "openclaw.json");
         if (!fs.existsSync(independentConfig)) {
-          const independentWorkspace = path.join(independentHome, "workspace");
+          const independentWorkspace = path.join(independentConfigDir, "workspace");
           if (!fs.existsSync(independentWorkspace)) {
             fs.mkdirSync(independentWorkspace, { recursive: true });
           }
