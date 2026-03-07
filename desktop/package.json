@@ -39,6 +39,13 @@
           "!.git",
           "!src/**"
         ]
+      },
+      {
+        "from": "node-bin",
+        "to": "node-bin",
+        "filter": [
+          "node"
+        ]
       }
     ],
     "mac": {

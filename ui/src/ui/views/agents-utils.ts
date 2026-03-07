@@ -9,6 +9,7 @@ import {
   resolveToolProfilePolicy,
 } from "../../../../src/agents/tool-policy-shared.js";
 import { t } from "../../i18n/index.ts";
+import { avatarFromName } from "../helpers/multiavatar.ts";
 import type { AgentIdentityResult, AgentsFilesListResult, AgentsListResult } from "../types.ts";
 
 export const TOOL_SECTIONS = listCoreToolSections();
@@ -105,6 +106,51 @@ export function resolveAgentEmoji(
 
 export function agentBadgeText(agentId: string, defaultId: string | null) {
   return defaultId && agentId === defaultId ? "default" : null;
+}
+
+function isAvatarUrl(value: string): boolean {
+  return /^https?:\/\//i.test(value) || /^data:image\//i.test(value) || value.startsWith("/");
+}
+
+/**
+ * Resolve an image src for the agent avatar.
+ * Returns a data URI, URL, or multiavatar-generated data URI.
+ * Returns null only if no name is available either.
+ */
+export function resolveAgentAvatarSrc(
+  agent: {
+    id: string;
+    name?: string;
+    identity?: { emoji?: string; avatar?: string; name?: string };
+  },
+  agentIdentity?: AgentIdentityResult | null,
+): string | null {
+  // Check identity avatar (data URI or URL)
+  const identityAvatar = agentIdentity?.avatar?.trim();
+  if (identityAvatar && isAvatarUrl(identityAvatar)) {
+    return identityAvatar;
+  }
+  // Check agent config avatar
+  const agentAvatar = agent.identity?.avatar?.trim();
+  if (agentAvatar && isAvatarUrl(agentAvatar)) {
+    return agentAvatar;
+  }
+  // Check identity emoji that is actually a data URI
+  const identityEmoji = agentIdentity?.emoji?.trim();
+  if (identityEmoji && isAvatarUrl(identityEmoji)) {
+    return identityEmoji;
+  }
+  const agentEmoji = agent.identity?.emoji?.trim();
+  if (agentEmoji && isAvatarUrl(agentEmoji)) {
+    return agentEmoji;
+  }
+  // Generate multiavatar from name
+  const displayName =
+    agentIdentity?.name?.trim() || agent.identity?.name?.trim() || agent.name?.trim() || agent.id;
+  if (displayName) {
+    return avatarFromName(displayName);
+  }
+  return null;
 }
 
 export function formatBytes(bytes?: number) {

@@ -24,6 +24,7 @@ import {
   normalizeAgentLabel,
   normalizeModelValue,
   resolveAgentConfig,
+  resolveAgentAvatarSrc,
   resolveAgentEmoji,
   resolveEffectiveModelFallbacks,
   resolveModelLabel,
@@ -142,13 +143,21 @@ export function renderAgents(props: AgentsProps) {
               : agents.map((agent) => {
                   const badge = agentBadgeText(agent.id, defaultId);
                   const emoji = resolveAgentEmoji(agent, props.agentIdentityById[agent.id] ?? null);
+                  const avatarSrc = resolveAgentAvatarSrc(
+                    agent,
+                    props.agentIdentityById[agent.id] ?? null,
+                  );
                   return html`
                     <button
                       type="button"
                       class="agent-row ${selectedId === agent.id ? "active" : ""}"
                       @click=${() => props.onSelectAgent(agent.id)}
                     >
-                      <div class="agent-avatar">${emoji || normalizeAgentLabel(agent).slice(0, 1)}</div>
+                      ${
+                        avatarSrc
+                          ? html`<img class="agent-avatar" src="${avatarSrc}" alt="${normalizeAgentLabel(agent)}" />`
+                          : html`<div class="agent-avatar">${emoji || normalizeAgentLabel(agent).slice(0, 1)}</div>`
+                      }
                       <div class="agent-info">
                         <div class="agent-title">${normalizeAgentLabel(agent)}</div>
                         <div class="agent-sub mono">${agent.id}</div>
@@ -318,10 +327,15 @@ function renderAgentHeader(
   const displayName = normalizeAgentLabel(agent);
   const subtitle = agent.identity?.theme?.trim() || t("agentsView.defaultSubtitle");
   const emoji = resolveAgentEmoji(agent, agentIdentity);
+  const avatarSrc = resolveAgentAvatarSrc(agent, agentIdentity);
   return html`
     <section class="card agent-header">
       <div class="agent-header-main">
-        <div class="agent-avatar agent-avatar--lg">${emoji || displayName.slice(0, 1)}</div>
+        ${
+          avatarSrc
+            ? html`<img class="agent-avatar agent-avatar--lg" src="${avatarSrc}" alt="${displayName}" />`
+            : html`<div class="agent-avatar agent-avatar--lg">${emoji || displayName.slice(0, 1)}</div>`
+        }
         <div>
           <div class="card-title">${displayName}</div>
           <div class="card-sub">${subtitle}</div>

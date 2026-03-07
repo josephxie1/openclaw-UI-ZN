@@ -307,9 +307,9 @@
   gap: 8px;
   width: 100%;
   padding: 6px 10px;
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 4px;
   background: transparent;
   border: none;
@@ -329,6 +329,7 @@
 .nav-label--active {
   color: var(--text-strong);
   font-weight: 600;
+  background: var(--bg-hover);
 }
 
 .nav-label--static {

@@ -124,6 +124,11 @@ export function renderChannelsQuickAdd(props: ChannelsQuickAddProps) {
                             props.onFieldChange("botToken", (e.target as HTMLInputElement).value)}
                         />
                       </label>
+                      <div class="quick-add__tutorial-link" style="grid-column: span 2;">
+                        <a href="https://xdclab-ai.feishu.cn/docx/VVvfdRizno06j3x9z3cc5Tc9nkh?from=from_copylink" target="_blank" rel="noopener noreferrer">
+                          📖 Telegram 配置教程
+                        </a>
+                      </div>
                     `
                     : html`
                       <label class="quick-add__field">
@@ -159,6 +164,11 @@ export function renderChannelsQuickAdd(props: ChannelsQuickAddProps) {
                             props.onFieldChange("botName", (e.target as HTMLInputElement).value)}
                         />
                       </label>
+                      <div class="quick-add__tutorial-link" style="grid-column: span 2;">
+                        <a href="https://xdclab-ai.feishu.cn/docx/TZScdTdmpoO7DPxzpGCcvAH8nRc?from=from_copylink" target="_blank" rel="noopener noreferrer">
+                          📖 飞书配置教程
+                        </a>
+                      </div>
                     `
                 }
               </div>

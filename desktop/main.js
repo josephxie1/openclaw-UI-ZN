@@ -1,6 +1,15 @@
 /* eslint-disable */
 // @ts-nocheck
-const { app, BrowserWindow, Tray, Menu, shell, dialog, globalShortcut } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Tray,
+  Menu,
+  shell,
+  dialog,
+  globalShortcut,
+  ipcMain,
+} = require("electron");
 const { fork, execFile } = require("child_process");
 const path = require("path");
 const http = require("http");
@@ -105,8 +114,7 @@ function buildMinimalConfig(workspaceDir) {
       signal: { enabled: true },
       imessage: { enabled: true },
       googlechat: { enabled: true },
-      nostr: { enabled: true },
-      line: { enabled: true },
+      feishu: { enabled: true },
     },
     plugins: {
       entries: {
@@ -148,6 +156,9 @@ function ensureMinimalConfig() {
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
     }
+    if (!fs.existsSync(workspaceDir)) {
+      fs.mkdirSync(workspaceDir, { recursive: true });
+    }
     fs.writeFileSync(configPath, JSON.stringify(minimalConfig, null, 2) + "\n");
     console.log("[desktop] Created minimal config successfully");
     return true;
@@ -168,10 +179,27 @@ function startGateway(extraArgs = [], customHome = null) {
     // ── Standalone mode: use Electron's Node to run bundled gateway ──
     console.log("[desktop] Starting bundled gateway from:", bundled.dir);
 
-    const { spawn } = require("child_process");
+    const { spawn, execSync } = require("child_process");
 
-    // In dev mode use system node to avoid dock icon; in packaged app use Electron's node
-    const nodeBin = app.isPackaged ? process.execPath : "node";
+    // Resolve node binary: bundled node-bin > system node > Electron node (last resort)
+    let nodeBin = "node";
+    let useElectronNode = false;
+    if (app.isPackaged) {
+      const bundledNode = path.join(process.resourcesPath, "node-bin", "node");
+      if (fs.existsSync(bundledNode)) {
+        nodeBin = bundledNode;
+        console.log("[desktop] Using bundled node:", bundledNode);
+      } else {
+        try {
+          execSync("node --version", { stdio: "ignore" });
+          console.log("[desktop] Using system node");
+        } catch {
+          nodeBin = process.execPath;
+          useElectronNode = true;
+          console.log("[desktop] Falling back to Electron node");
+        }
+      }
+    }
     const env = Object.assign({}, process.env, {
       NODE_PATH: path.join(bundled.dir, "node_modules"),
     });
@@ -184,11 +212,14 @@ function startGateway(extraArgs = [], customHome = null) {
       env.OPENCLAW_VERSION = gwPkg.version;
     } catch {}
 
-    if (!app.isPackaged) {
-      // No need for ELECTRON_RUN_AS_NODE when using system node
-    } else {
+    if (useElectronNode) {
       env.ELECTRON_RUN_AS_NODE = "1";
       env.ELECTRON_NO_ATTACH_CONSOLE = "1";
+    }
+    // Point gateway to bundled plugins (e.g. feishu plugin)
+    const extensionsDir = path.join(bundled.dir, "extensions");
+    if (fs.existsSync(extensionsDir)) {
+      env.OPENCLAW_BUNDLED_PLUGINS_DIR = extensionsDir;
     }
     if (customHome) env.OPENCLAW_HOME = customHome;
 
@@ -321,19 +352,27 @@ if (process.platform === "darwin" && app.dock) {
 }
 
 function createWindow() {
+  const isDark = require("electron").nativeTheme.shouldUseDarkColors;
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 800,
     minHeight: 600,
     title: "OpenClaw Desktop",
+    titleBarStyle: "hiddenInset",
+    trafficLightPosition: { x: 12, y: 18 },
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
     },
     show: false,
-    backgroundColor: require("electron").nativeTheme.shouldUseDarkColors ? "#0a0a14" : "#f5f5f7",
+    backgroundColor: isDark ? "#0a0a14" : "#f5f5f7",
+  });
+
+  // IPC: sync window background color when web theme changes
+  ipcMain.on("theme-bg-change", (_, color) => {
+    if (mainWindow) mainWindow.setBackgroundColor(color);
   });
 
   // Show splash screen while gateway starts
@@ -638,6 +677,9 @@ app
         const independentConfig = path.join(independentConfigDir, "openclaw.json");
         if (!fs.existsSync(independentConfig)) {
           const independentWorkspace = path.join(independentHome, "workspace");
+          if (!fs.existsSync(independentWorkspace)) {
+            fs.mkdirSync(independentWorkspace, { recursive: true });
+          }
           fs.writeFileSync(
             independentConfig,
             JSON.stringify(buildMinimalConfig(independentWorkspace), null, 2) + "\n",
@@ -721,6 +763,37 @@ app
         ? GATEWAY_URL_ACTUAL + (GATEWAY_URL_ACTUAL.includes("?") ? "&" : "?") + "onboarding=true"
         : GATEWAY_URL_ACTUAL;
       mainWindow.loadURL(url);
+
+      // Inject desktop-specific CSS and theme sync after page loads
+      mainWindow.webContents.on("did-finish-load", () => {
+        mainWindow.webContents.executeJavaScript(`
+          (function() {
+            // Add CSS for traffic light area and draggable title bar
+            const style = document.createElement('style');
+            style.textContent = \`
+              /* Topbar is the window drag region */
+              .topbar { -webkit-app-region: drag; padding-left: 80px !important; }
+              /* All interactive content inside topbar = clickable, not draggable */
+              .topbar * { -webkit-app-region: no-drag; }
+              /* Setup wizard overlay must not be blocked by topbar drag */
+              .setup-wizard, .setup-wizard * { -webkit-app-region: no-drag; }
+              /* Leave room for traffic lights in nav */
+              .nav { padding-top: 40px !important; }
+            \`;
+            document.head.appendChild(style);
+
+            // Sync Electron window background color when theme changes
+            const syncBg = () => {
+              const theme = document.documentElement.getAttribute('data-theme');
+              const bg = theme === 'light' ? '#f5f5f7' : '#0a0a14';
+              if (window.desktop && window.desktop.setThemeBg) window.desktop.setThemeBg(bg);
+            };
+            syncBg();
+            const obs = new MutationObserver(syncBg);
+            obs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+          })();
+        `);
+      });
     }
 
     installLaunchAgent();
@@ -736,10 +809,16 @@ app
     app.quit();
   });
 
-app.on("before-quit", () => {
+app.on("before-quit", async () => {
   isQuitting = true;
   if (!externalGateway) {
-    stopGateway();
+    await stopGateway();
+    // Force-kill anything still on the port
+    try {
+      const { execSync } = require("child_process");
+      const portNum = GATEWAY_URL_ACTUAL.match(/:(\d+)/)?.[1];
+      if (portNum) execSync(`lsof -ti:${portNum} | xargs kill -9 2>/dev/null || true`);
+    } catch {}
   }
 });
 
@@ -752,3 +831,22 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
+// Handle Ctrl+C / terminal kill — clean up gateway before exit
+for (const sig of ["SIGINT", "SIGTERM"]) {
+  process.on(sig, () => {
+    console.log(`[desktop] Received ${sig}, cleaning up...`);
+    isQuitting = true;
+    if (gatewayProcess) {
+      try {
+        gatewayProcess.kill("SIGKILL");
+      } catch {}
+    }
+    try {
+      const { execSync } = require("child_process");
+      const portNum = GATEWAY_URL_ACTUAL.match(/:(\d+)/)?.[1];
+      if (portNum) execSync(`lsof -ti:${portNum} | xargs kill -9 2>/dev/null || true`);
+    } catch {}
+    app.quit();
+  });
+}

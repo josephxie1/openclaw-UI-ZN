@@ -2204,6 +2204,7 @@ pre.code-block {
   display: grid;
   place-items: center;
   font-weight: 600;
+  object-fit: cover;
 }
 
 .agent-avatar--lg {

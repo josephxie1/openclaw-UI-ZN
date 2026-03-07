@@ -2,3 +2,4 @@ node_modules/
 release/
 gateway/node_modules/
 gateway/dist/
+node-bin/

@@ -358,13 +358,24 @@ export function renderApp(state: AppViewState) {
                 <button
                   class="nav-label ${state.tab === "chat" ? "nav-label--active" : ""}"
                   @click=${() => {
-                    const next = { ...state.settings.navGroupsCollapsed };
-                    next[group.label] = !isGroupCollapsed;
-                    state.applySettings({
-                      ...state.settings,
-                      navGroupsCollapsed: next,
-                    });
-                    state.setTab("chat");
+                    if (state.tab === "chat") {
+                      // Already on chat — just toggle collapse, no reload
+                      const next = { ...state.settings.navGroupsCollapsed };
+                      next[group.label] = !isGroupCollapsed;
+                      state.applySettings({
+                        ...state.settings,
+                        navGroupsCollapsed: next,
+                      });
+                    } else {
+                      // Coming from another tab — always expand and load
+                      const next = { ...state.settings.navGroupsCollapsed };
+                      next[group.label] = false;
+                      state.applySettings({
+                        ...state.settings,
+                        navGroupsCollapsed: next,
+                      });
+                      state.setTab("chat");
+                    }
                   }}
                   aria-expanded=${!isGroupCollapsed}
                 >
@@ -587,6 +598,9 @@ export function renderApp(state: AppViewState) {
                           ["models", "providers", f.provider.trim()],
                           providerObj,
                         );
+                        // Set the first selected model as the default agent model
+                        const firstModel = `${f.provider.trim()}/${newModels[0].id}`;
+                        updateConfigFormValue(state, ["agents", "defaults", "model"], firstModel);
                       } catch (err) {
                         console.error("Wizard: failed to prepare model config", err);
                       }

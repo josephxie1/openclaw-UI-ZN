@@ -1,8 +1,9 @@
 /* eslint-disable */
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("desktop", {
   platform: process.platform,
   isDesktop: true,
   isOnboarding: process.env.OPENCLAW_ONBOARDING === "1",
+  setThemeBg: (color) => ipcRenderer.send("theme-bg-change", color),
 });

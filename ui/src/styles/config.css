@@ -1763,6 +1763,25 @@
   font-size: 13px;
 }
 
+.quick-add__tutorial-link {
+  margin: -4px 0 0;
+}
+
+.quick-add__tutorial-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.quick-add__tutorial-link a:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
 .quick-add__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
