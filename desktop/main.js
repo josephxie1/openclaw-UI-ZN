@@ -295,6 +295,8 @@ function startGateway(extraArgs = [], customHome = null) {
         const req = http.get(checkUrl + "/api/v1/status", (res) => {
           // Port is alive — gateway self-restarted, just reconnect the window
           console.log("[desktop] Gateway self-restarted, reconnecting window...");
+          // Clear onboarding flag to prevent re-triggering wizard on reload
+          delete process.env.OPENCLAW_ONBOARDING;
           if (mainWindow && !mainWindow.isDestroyed()) {
             mainWindow.loadURL(checkUrl);
           }
@@ -415,6 +417,12 @@ function createWindow() {
   // IPC: sync window background color when web theme changes
   ipcMain.on("theme-bg-change", (_, color) => {
     if (mainWindow) mainWindow.setBackgroundColor(color);
+  });
+
+  // IPC: clear onboarding flag when wizard completes
+  ipcMain.on("onboarding-done", () => {
+    console.log("[desktop] Onboarding completed, clearing flag");
+    delete process.env.OPENCLAW_ONBOARDING;
   });
 
   // Show splash screen while gateway starts

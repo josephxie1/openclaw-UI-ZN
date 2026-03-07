@@ -641,6 +641,11 @@ export function renderApp(state: AppViewState) {
                   state.onboarding = false;
                   state.wizardStep = 1;
                   state.setTab("chat");
+                  // Notify Desktop main process to clear onboarding flag
+                  const dsk = (window as unknown as Record<string, unknown>).desktop as
+                    | { onboardingDone?: () => void }
+                    | undefined;
+                  dsk?.onboardingDone?.();
                 },
                 onAnimationEnd: () => {
                   state.wizardAnimating = false;
