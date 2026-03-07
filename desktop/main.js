@@ -221,7 +221,10 @@ function startGateway(extraArgs = [], customHome = null) {
     if (fs.existsSync(extensionsDir)) {
       env.OPENCLAW_BUNDLED_PLUGINS_DIR = extensionsDir;
     }
-    if (customHome) env.OPENCLAW_HOME = customHome;
+    if (customHome) {
+      env.OPENCLAW_HOME = customHome;
+      env.OPENCLAW_CONFIG_PATH = path.join(customHome, "openclaw.json");
+    }
 
     gatewayProcess = spawn(
       nodeBin,
@@ -245,7 +248,10 @@ function startGateway(extraArgs = [], customHome = null) {
     console.log("[desktop] No bundled gateway found, using system openclaw");
     const { spawn } = require("child_process");
     const fallbackEnv = Object.assign({}, process.env);
-    if (customHome) fallbackEnv.OPENCLAW_HOME = customHome;
+    if (customHome) {
+      fallbackEnv.OPENCLAW_HOME = customHome;
+      fallbackEnv.OPENCLAW_CONFIG_PATH = path.join(customHome, "openclaw.json");
+    }
     gatewayProcess = spawn(
       "openclaw",
       ["gateway", "--allow-unconfigured", "--auth", "none", ...extraArgs],
@@ -670,11 +676,10 @@ app
         GATEWAY_URL_ACTUAL = `http://127.0.0.1:${newPort}`;
 
         // Create minimal config for independent instance
-        const independentConfigDir = path.join(independentHome, ".openclaw");
-        if (!fs.existsSync(independentConfigDir)) {
-          fs.mkdirSync(independentConfigDir, { recursive: true });
+        if (!fs.existsSync(independentHome)) {
+          fs.mkdirSync(independentHome, { recursive: true });
         }
-        const independentConfig = path.join(independentConfigDir, "openclaw.json");
+        const independentConfig = path.join(independentHome, "openclaw.json");
         if (!fs.existsSync(independentConfig)) {
           const independentWorkspace = path.join(independentHome, "workspace");
           if (!fs.existsSync(independentWorkspace)) {
