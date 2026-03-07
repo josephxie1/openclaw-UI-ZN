@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { t } from "../../i18n/index.ts";
 import { renderDropdown } from "../components/dropdown.ts";
 import type { DropdownGroup } from "../components/dropdown.ts";
+import { generateRandomAvatars } from "../helpers/multiavatar.ts";
 
 export type ChannelType = "telegram" | "feishu";
 
@@ -42,7 +43,8 @@ export interface ChannelsQuickAddProps {
   onModelDropdownGroupToggle: (label: string) => void;
 }
 
-const EMOJI_OPTIONS = ["🤖", "🧠", "💻", "✍️", "💝", "🍌", "🦞", "🎨", "📊", "🔧", "🎯", "🚀"];
+// Generate initial random avatars
+let randomAvatarOptions = generateRandomAvatars(8);
 
 export function renderChannelsQuickAdd(props: ChannelsQuickAddProps) {
   const { form, expanded, busy, error, availableModels, availableAgents } = props;
@@ -235,20 +237,32 @@ export function renderChannelsQuickAdd(props: ChannelsQuickAddProps) {
                                       )}
                                   />
                                 </label>
-                                <label class="quick-add__field">
-                                  <span class="quick-add__label">Emoji</span>
-                                  <div class="channel-quick-add__emoji-picker">
-                                    ${EMOJI_OPTIONS.map(
-                                      (emoji) => html`
+                                <label class="quick-add__field" style="grid-column: span 2;">
+                                  <span class="quick-add__label">${t("channelsQuickAdd.avatar") ?? "头像"}</span>
+                                  <div class="channel-quick-add__avatar-grid">
+                                    ${randomAvatarOptions.map(
+                                      (opt) => html`
                                         <button
                                           type="button"
-                                          class="channel-quick-add__emoji-btn ${form.agentEmoji === emoji ? "active" : ""}"
-                                          @click=${() => props.onFieldChange("agentEmoji", emoji)}
+                                          class="channel-quick-add__avatar-btn ${form.agentEmoji === opt.dataUri ? "active" : ""}"
+                                          @click=${() => props.onFieldChange("agentEmoji", opt.dataUri)}
                                         >
-                                          ${emoji}
+                                          <img src=${opt.dataUri} alt="avatar" width="36" height="36" />
                                         </button>
                                       `,
                                     )}
+                                    <button
+                                      type="button"
+                                      class="channel-quick-add__avatar-btn channel-quick-add__avatar-refresh"
+                                      title="${t("channelsQuickAdd.refreshAvatars") ?? "换一批"}"
+                                      @click=${() => {
+                                        randomAvatarOptions = generateRandomAvatars(8);
+                                        // Force re-render
+                                        props.onFieldChange("agentEmoji", form.agentEmoji || "🤖");
+                                      }}
+                                    >
+                                      🎲
+                                    </button>
                                   </div>
                                 </label>
                                 <div class="quick-add__field" style="grid-column: span 2;">

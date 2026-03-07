@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #0a0a14;
+            --claw-fill: rgba(255, 255, 255, 0.9);
+            --title-color: #fff;
+            --subtitle-color: rgba(255, 255, 255, 0.4);
+            --ring-color: rgba(99, 102, 241, 0.15);
+            --ring2-color: rgba(99, 102, 241, 0.1);
+            --dot-color: #a78bfa;
+            --track-bg: rgba(255, 255, 255, 0.06);
+            --glow-a: rgba(99, 102, 241, 0.4);
+            --glow-b: rgba(167, 139, 250, 0.7);
+            --text-glow-a: rgba(99, 102, 241, 0.3);
+            --text-glow-b: rgba(167, 139, 250, 0.6);
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #f5f5f7;
+                --claw-fill: rgba(67, 56, 202, 0.85);
+                --title-color: #1a1a2e;
+                --subtitle-color: rgba(0, 0, 0, 0.4);
+                --ring-color: rgba(99, 102, 241, 0.12);
+                --ring2-color: rgba(99, 102, 241, 0.08);
+                --dot-color: #6366f1;
+                --track-bg: rgba(0, 0, 0, 0.06);
+                --glow-a: rgba(99, 102, 241, 0.25);
+                --glow-b: rgba(167, 139, 250, 0.45);
+                --text-glow-a: rgba(99, 102, 241, 0.15);
+                --text-glow-b: rgba(167, 139, 250, 0.3);
+            }
+        }
+
+        body {
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 24px;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 20px var(--glow-a))
+            }
+
+            50% {
+                transform: scale(1.08);
+                filter: drop-shadow(0 0 40px var(--glow-b))
+            }
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(-3deg)
+            }
+
+            50% {
+                transform: rotate(3deg)
+            }
+
+            100% {
+                transform: rotate(-3deg)
+            }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.6
+            }
+
+            100% {
+                transform: scale(2.5);
+                opacity: 0
+            }
+        }
+
+        @keyframes text-glow {
+
+            0%,
+            100% {
+                opacity: 0.7;
+                text-shadow: 0 0 8px var(--text-glow-a)
+            }
+
+            50% {
+                opacity: 1;
+                text-shadow: 0 0 20px var(--text-glow-b)
+            }
+        }
+
+        @keyframes progress {
+            0% {
+                background-position: 200% 0
+            }
+
+            100% {
+                background-position: -200% 0
+            }
+        }
+
+        @keyframes dot {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0)
+            }
+
+            40% {
+                transform: scale(1)
+            }
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .icon-wrap {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fade-in 0.6s ease-out;
+        }
+
+        .ring {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: var(--ring-color);
+            animation: pulse-ring 2s ease-out infinite;
+        }
+
+        .ring:nth-child(2) {
+            animation-delay: 0.5s;
+            background: var(--ring2-color);
+        }
+
+        .claw-svg {
+            animation: breathe 2s ease-in-out infinite;
+        }
+
+        .claw-svg g {
+            animation: rotate 3s ease-in-out infinite;
+            transform-origin: 256px 256px;
+        }
+
+        .title {
+            color: var(--title-color);
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            animation: text-glow 2s ease-in-out infinite, fade-in 0.6s ease-out 0.2s both;
+        }
+
+        .subtitle {
+            color: var(--subtitle-color);
+            font-size: 13px;
+            animation: fade-in 0.6s ease-out 0.4s both;
+            margin-top: -12px;
+        }
+
+        .dots {
+            display: flex;
+            gap: 6px;
+            animation: fade-in 0.6s ease-out 0.3s both;
+        }
+
+        .dots div {
+            width: 6px;
+            height: 6px;
+            background: var(--dot-color);
+            border-radius: 50%;
+            animation: dot 1.4s infinite ease-in-out;
+        }
+
+        .dots div:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .dots div:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .progress-track {
+            width: 200px;
+            height: 3px;
+            background: var(--track-bg);
+            border-radius: 2px;
+            overflow: hidden;
+            animation: fade-in 0.6s ease-out 0.5s both;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, #6366f1, #a78bfa, #6366f1, transparent);
+            background-size: 200% 100%;
+            border-radius: 2px;
+            animation: progress 1.5s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="icon-wrap">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <svg class="claw-svg" width="72" height="72" viewBox="0 0 512 512">
+            <g>
+                <path fill="var(--claw-fill)"
+                    d="M175.656 22.375l-48.47 82.094c-23.017 4.384-43.547 11.782-60.124 22.374-24.436 15.613-40.572 37.414-45.5 67.875-4.79 29.62 1.568 68.087 24.125 116.093 93.162 22.88 184.08-10.908 257.25-18.813 37.138-4.012 71.196-.898 96.344 22.97 22.33 21.19 36.21 56.808 41.908 113.436 29.246-35.682 44.538-69.065 49.343-99.594 5.543-35.207-2.526-66.97-20.31-95.593-8.52-13.708-19.368-26.618-32-38.626l14.217-33-41.218 10.625c-8.637-6.278-17.765-12.217-27.314-17.782l-7.03-59.782-38.157 37.406c-12.418-5.186-25.184-9.804-38.158-13.812l-8.375-71.28-57.625 56.5c-9.344-1.316-18.625-2.333-27.812-2.97l-31.094-78.125zM222 325.345c-39.146 7.525-82.183 14.312-127.156 11.686 47.403 113.454 207.056 224.082 260.125 87-101.18 33.84-95.303-49.595-132.97-98.686z" />
+            </g>
+        </svg>
+    </div>
+    <div class="title">OpenClaw</div>
+    <div class="dots">
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+    <div class="subtitle">正在启动网关…</div>
+    <div class="progress-track">
+        <div class="progress-bar"></div>
+    </div>
+</body>
+
+</html>

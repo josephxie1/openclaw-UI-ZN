@@ -33,16 +33,16 @@
   --border-strong: #3f3f46;
   --border-hover: #52525b;
   --input: #27272a;
-  --ring: #ff5c5c;
+  --ring: #0A84FF;
 
-  /* Accent - Punchy signature red */
-  --accent: #ff5c5c;
-  --accent-hover: #ff7070;
-  --accent-muted: #ff5c5c;
-  --accent-subtle: rgba(255, 92, 92, 0.15);
-  --accent-foreground: #fafafa;
-  --accent-glow: rgba(255, 92, 92, 0.25);
-  --primary: #ff5c5c;
+  /* Accent - iOS Blue */
+  --accent: #0A84FF;
+  --accent-hover: #409CFF;
+  --accent-muted: #0A84FF;
+  --accent-subtle: rgba(10, 132, 255, 0.15);
+  --accent-foreground: #ffffff;
+  --accent-glow: rgba(10, 132, 255, 0.25);
+  --primary: #0A84FF;
   --primary-foreground: #ffffff;
 
   /* Secondary - Teal accent for variety */
@@ -52,22 +52,22 @@
   --accent-2-muted: rgba(20, 184, 166, 0.7);
   --accent-2-subtle: rgba(20, 184, 166, 0.15);
 
-  /* Semantic - More saturated */
-  --ok: #22c55e;
-  --ok-muted: rgba(34, 197, 94, 0.75);
-  --ok-subtle: rgba(34, 197, 94, 0.12);
-  --destructive: #ef4444;
-  --destructive-foreground: #fafafa;
-  --warn: #f59e0b;
-  --warn-muted: rgba(245, 158, 11, 0.75);
-  --warn-subtle: rgba(245, 158, 11, 0.12);
-  --danger: #ef4444;
-  --danger-muted: rgba(239, 68, 68, 0.75);
-  --danger-subtle: rgba(239, 68, 68, 0.12);
-  --info: #3b82f6;
+  /* Semantic - iOS System Colors */
+  --ok: #30D158;
+  --ok-muted: rgba(48, 209, 88, 0.75);
+  --ok-subtle: rgba(48, 209, 88, 0.12);
+  --destructive: #FF453A;
+  --destructive-foreground: #ffffff;
+  --warn: #FF9F0A;
+  --warn-muted: rgba(255, 159, 10, 0.75);
+  --warn-subtle: rgba(255, 159, 10, 0.12);
+  --danger: #FF453A;
+  --danger-muted: rgba(255, 69, 58, 0.75);
+  --danger-subtle: rgba(255, 69, 58, 0.12);
+  --info: #0A84FF;
 
   /* Focus - With glow */
-  --focus: rgba(255, 92, 92, 0.25);
+  --focus: rgba(10, 132, 255, 0.25);
   --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring);
   --focus-glow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring), 0 0 20px var(--accent-glow);
 
@@ -142,14 +142,15 @@
   --border-strong: #d4d4d8;
   --border-hover: #a1a1aa;
   --input: #e4e4e7;
+  --ring: #007AFF;
 
-  --accent: #dc2626;
-  --accent-hover: #ef4444;
-  --accent-muted: #dc2626;
-  --accent-subtle: rgba(220, 38, 38, 0.12);
+  --accent: #007AFF;
+  --accent-hover: #0A84FF;
+  --accent-muted: #007AFF;
+  --accent-subtle: rgba(0, 122, 255, 0.12);
   --accent-foreground: #ffffff;
-  --accent-glow: rgba(220, 38, 38, 0.15);
-  --primary: #dc2626;
+  --accent-glow: rgba(0, 122, 255, 0.15);
+  --primary: #007AFF;
   --primary-foreground: #ffffff;
 
   --secondary: #f4f4f5;
@@ -158,20 +159,20 @@
   --accent-2-muted: rgba(13, 148, 136, 0.75);
   --accent-2-subtle: rgba(13, 148, 136, 0.12);
 
-  --ok: #16a34a;
-  --ok-muted: rgba(22, 163, 74, 0.75);
-  --ok-subtle: rgba(22, 163, 74, 0.1);
-  --destructive: #dc2626;
-  --destructive-foreground: #fafafa;
-  --warn: #d97706;
-  --warn-muted: rgba(217, 119, 6, 0.75);
-  --warn-subtle: rgba(217, 119, 6, 0.1);
-  --danger: #dc2626;
-  --danger-muted: rgba(220, 38, 38, 0.75);
-  --danger-subtle: rgba(220, 38, 38, 0.1);
-  --info: #2563eb;
+  --ok: #34C759;
+  --ok-muted: rgba(52, 199, 89, 0.75);
+  --ok-subtle: rgba(52, 199, 89, 0.1);
+  --destructive: #FF3B30;
+  --destructive-foreground: #ffffff;
+  --warn: #FF9500;
+  --warn-muted: rgba(255, 149, 0, 0.75);
+  --warn-subtle: rgba(255, 149, 0, 0.1);
+  --danger: #FF3B30;
+  --danger-muted: rgba(255, 59, 48, 0.75);
+  --danger-subtle: rgba(255, 59, 48, 0.1);
+  --info: #007AFF;
 
-  --focus: rgba(220, 38, 38, 0.2);
+  --focus: rgba(0, 122, 255, 0.2);
   --focus-glow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring), 0 0 16px var(--accent-glow);
 
   --grid-line: rgba(0, 0, 0, 0.05);
@@ -210,6 +211,7 @@ body {
   0% {
     clip-path: circle(0% at var(--theme-switch-x, 50%) var(--theme-switch-y, 50%));
   }
+
   100% {
     clip-path: circle(150% at var(--theme-switch-x, 50%) var(--theme-switch-y, 50%));
   }
@@ -232,6 +234,7 @@ html.theme-transition::view-transition-new(theme) {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   html.theme-transition::view-transition-old(theme),
   html.theme-transition::view-transition-new(theme) {
     animation: none !important;
@@ -292,6 +295,7 @@ select {
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -302,6 +306,7 @@ select {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -312,6 +317,7 @@ select {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -323,6 +329,7 @@ select {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -333,26 +340,31 @@ select {
   0% {
     background-position: -200% 0;
   }
+
   100% {
     background-position: 200% 0;
   }
 }
 
 @keyframes pulse-subtle {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
 }
 
 @keyframes glow-pulse {
+
   0%,
   100% {
-    box-shadow: 0 0 0 rgba(255, 92, 92, 0);
+    box-shadow: 0 0 0 rgba(10, 132, 255, 0);
   }
+
   50% {
     box-shadow: 0 0 20px var(--accent-glow);
   }
@@ -362,18 +374,23 @@ select {
 .stagger-1 {
   animation-delay: 0ms;
 }
+
 .stagger-2 {
   animation-delay: 50ms;
 }
+
 .stagger-3 {
   animation-delay: 100ms;
 }
+
 .stagger-4 {
   animation-delay: 150ms;
 }
+
 .stagger-5 {
   animation-delay: 200ms;
 }
+
 .stagger-6 {
   animation-delay: 250ms;
 }

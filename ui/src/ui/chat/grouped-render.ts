@@ -1,6 +1,7 @@
 import { html, nothing } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import type { AssistantIdentity } from "../assistant-identity.ts";
+import { avatarFromName } from "../helpers/multiavatar.ts";
 import { toSanitizedMarkdownHtml } from "../markdown.ts";
 import { openExternalUrlSafe } from "../open-external-url.ts";
 import { detectTextDirection } from "../text-direction.ts";
@@ -184,7 +185,17 @@ function renderAvatar(role: string, assistant?: Pick<AssistantIdentity, "name" |
         alt="${assistantName}"
       />`;
     }
-    return html`<div class="chat-avatar ${className}">${assistantAvatar}</div>`;
+    // Emoji avatar — fall through to multiavatar below
+  }
+
+  // Generate multiavatar from assistant name as default
+  if (normalized === "assistant") {
+    const defaultAvatar = avatarFromName(assistantName);
+    return html`<img
+      class="chat-avatar ${className}"
+      src="${defaultAvatar}"
+      alt="${assistantName}"
+    />`;
   }
 
   return html`<div class="chat-avatar ${className}">${initial}</div>`;

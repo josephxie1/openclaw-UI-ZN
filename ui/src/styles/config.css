@@ -2178,6 +2178,60 @@
   margin-top: 14px;
 }
 
+.channel-quick-add__avatar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.channel-quick-add__avatar-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.channel-quick-add__avatar-btn {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  overflow: hidden;
+  transition: all var(--duration-fast) ease;
+}
+
+.channel-quick-add__avatar-btn img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.channel-quick-add__avatar-btn:hover {
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+
+.channel-quick-add__avatar-btn.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.channel-quick-add__avatar-refresh {
+  font-size: 18px;
+  border-style: dashed;
+}
+
+.channel-quick-add__avatar-refresh:hover {
+  background: var(--bg-hover);
+  border-style: solid;
+}
+
 .channel-quick-add__emoji-picker {
   display: flex;
   flex-wrap: wrap;

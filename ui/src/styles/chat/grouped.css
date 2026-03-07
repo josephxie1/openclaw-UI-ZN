@@ -123,6 +123,9 @@ img.chat-avatar {
   display: block;
   object-fit: cover;
   object-position: center;
+  border-radius: 50%;
+  padding: 0;
+  background: var(--bg-elevated);
 }
 
 /* Minimal Bubble Design - dynamic width based on content */

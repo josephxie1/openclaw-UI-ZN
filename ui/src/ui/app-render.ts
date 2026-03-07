@@ -65,6 +65,7 @@ import {
   updateSkillEnabled,
 } from "./controllers/skills.ts";
 import { buildExternalLinkRel, EXTERNAL_LINK_TARGET } from "./external-link.ts";
+import { translateError } from "./helpers/translate-error.ts";
 import { icons } from "./icons.ts";
 import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
 import { resolveConfiguredCronModelSuggestions } from "./views/agents-utils.ts";
@@ -83,6 +84,7 @@ import { renderModelsQuickAdd, PROVIDER_PRESETS } from "./views/models-quick-add
 import { renderNodes } from "./views/nodes.ts";
 import { renderOverview } from "./views/overview.ts";
 import { renderSessions } from "./views/sessions.ts";
+import { renderSetupWizard } from "./views/setup-wizard.ts";
 import { renderSkills } from "./views/skills.ts";
 
 const AVATAR_DATA_RE = /^data:/i;
@@ -322,17 +324,326 @@ export function renderApp(state: AppViewState) {
             </div>`
             : nothing
         }
-        <section class="content-header">
+        ${
+          state.onboarding
+            ? renderSetupWizard({
+                currentStep: state.wizardStep,
+                totalSteps: 4,
+                direction: state.wizardDirection,
+                animating: state.wizardAnimating,
+                saving: state.wizardSaving,
+                // Model step state
+                selectedPreset: state.modelsQuickAddPreset,
+                selectedModelIds: state.modelsQuickAddSelectedIds,
+                apiKey: state.modelsQuickAddForm.apiKey,
+                presetDropdownOpen: state.wizardPresetDropdownOpen,
+                modelDropdownOpen: state.wizardModelDropdownOpen,
+                onPresetSelect: (presetId: string) => {
+                  state.modelsQuickAddPreset = presetId;
+                  state.wizardPresetDropdownOpen = false;
+                  if (presetId === "__custom__") {
+                    state.modelsQuickAddForm = {
+                      provider: "",
+                      baseUrl: "",
+                      api: "openai-completions",
+                      apiKey: "",
+                      models: [{ id: "", name: "" }],
+                    };
+                    state.modelsQuickAddSelectedIds = [];
+                  } else {
+                    const preset = PROVIDER_PRESETS.find((p) => p.id === presetId);
+                    if (preset) {
+                      state.modelsQuickAddForm = {
+                        provider: preset.provider,
+                        baseUrl: preset.baseUrl,
+                        api: preset.api,
+                        apiKey: state.modelsQuickAddForm.apiKey,
+                        models: [],
+                      };
+                      const first = preset.models[0];
+                      state.modelsQuickAddSelectedIds = first ? [first.id] : [];
+                    }
+                  }
+                },
+                onPresetDropdownToggle: () => {
+                  state.wizardPresetDropdownOpen = !state.wizardPresetDropdownOpen;
+                  if (state.wizardPresetDropdownOpen) {
+                    state.wizardModelDropdownOpen = false;
+                    const close = () => {
+                      state.wizardPresetDropdownOpen = false;
+                      document.removeEventListener("click", close);
+                    };
+                    requestAnimationFrame(() =>
+                      document.addEventListener("click", close, { once: true }),
+                    );
+                  }
+                },
+                onModelToggle: (modelId: string) => {
+                  const ids = new Set(state.modelsQuickAddSelectedIds);
+                  if (ids.has(modelId)) {
+                    ids.delete(modelId);
+                  } else {
+                    ids.add(modelId);
+                  }
+                  state.modelsQuickAddSelectedIds = [...ids];
+                },
+                onModelDropdownToggle: () => {
+                  state.wizardModelDropdownOpen = !state.wizardModelDropdownOpen;
+                  if (state.wizardModelDropdownOpen) {
+                    state.wizardPresetDropdownOpen = false;
+                    const close = () => {
+                      state.wizardModelDropdownOpen = false;
+                      document.removeEventListener("click", close);
+                    };
+                    requestAnimationFrame(() =>
+                      document.addEventListener("click", close, { once: true }),
+                    );
+                  }
+                },
+                onApiKeyChange: (value: string) => {
+                  state.modelsQuickAddForm = { ...state.modelsQuickAddForm, apiKey: value };
+                },
+                apiKeyVisible: state.wizardApiKeyVisible,
+                onApiKeyVisibilityToggle: () => {
+                  state.wizardApiKeyVisible = !state.wizardApiKeyVisible;
+                },
+                customForm: state.modelsQuickAddForm,
+                onCustomFieldChange: (field: string, value: string) => {
+                  state.modelsQuickAddForm = { ...state.modelsQuickAddForm, [field]: value };
+                },
+                onCustomModelChange: (index: number, field: string, value: string) => {
+                  const models = [...state.modelsQuickAddForm.models];
+                  models[index] = { ...models[index], [field]: value };
+                  state.modelsQuickAddForm = { ...state.modelsQuickAddForm, models };
+                },
+                onCustomAddModel: () => {
+                  state.modelsQuickAddForm = {
+                    ...state.modelsQuickAddForm,
+                    models: [...state.modelsQuickAddForm.models, { id: "", name: "" }],
+                  };
+                },
+                onCustomRemoveModel: (index: number) => {
+                  state.modelsQuickAddForm = {
+                    ...state.modelsQuickAddForm,
+                    models: state.modelsQuickAddForm.models.filter((_, i) => i !== index),
+                  };
+                },
+                // Navigation
+                onNext: async () => {
+                  // Save model config when leaving step 2 (silently)
+                  if (state.wizardStep === 2) {
+                    const f = state.modelsQuickAddForm;
+                    const isCustom = state.modelsQuickAddPreset === "__custom__";
+                    let newModels: Array<{ id: string; name: string; input: string[] }>;
+                    if (isCustom) {
+                      newModels = f.models
+                        .filter((m) => m.id.trim() !== "")
+                        .map((m) => ({
+                          id: m.id.trim(),
+                          name: m.name.trim() || m.id.trim(),
+                          input: m.supportsImage ? ["text", "image"] : ["text"],
+                        }));
+                    } else {
+                      const preset = PROVIDER_PRESETS.find(
+                        (p) => p.id === state.modelsQuickAddPreset,
+                      );
+                      const selectedIds = new Set(state.modelsQuickAddSelectedIds);
+                      newModels = (preset?.models ?? [])
+                        .filter((m) => selectedIds.has(m.id))
+                        .map((m) => ({
+                          id: m.id,
+                          name: m.name,
+                          input: m.supportsImage ? ["text", "image"] : ["text"],
+                        }));
+                    }
+                    if (f.provider.trim() && f.apiKey.trim() && newModels.length > 0) {
+                      try {
+                        if (!(state.configSnapshot as Record<string, unknown>)?.hash) {
+                          await loadConfig(state);
+                        }
+                        const providerObj: Record<string, unknown> = {
+                          baseUrl: f.baseUrl.trim(),
+                          apiKey: f.apiKey.trim(),
+                          api: f.api,
+                          models: newModels,
+                        };
+                        updateConfigFormValue(state, ["models", "mode"], "merge");
+                        updateConfigFormValue(
+                          state,
+                          ["models", "providers", f.provider.trim()],
+                          providerObj,
+                        );
+                      } catch (err) {
+                        console.error("Wizard: failed to prepare model config", err);
+                      }
+                    }
+                  }
+                  state.wizardDirection = 1;
+                  state.wizardAnimating = true;
+                  state.wizardStep = state.wizardStep + 1;
+                },
+                onBack: () => {
+                  state.wizardDirection = -1;
+                  state.wizardAnimating = true;
+                  state.wizardStep = state.wizardStep - 1;
+                },
+                onSkip: () => {
+                  state.wizardDirection = 1;
+                  state.wizardAnimating = true;
+                  state.wizardStep = state.wizardStep + 1;
+                },
+                onComplete: async () => {
+                  state.wizardSaving = true;
+                  try {
+                    // Ensure config snapshot is loaded (needed for hash)
+                    if (!(state.configSnapshot as Record<string, unknown>)?.hash) {
+                      await loadConfig(state);
+                    }
+                    // Only apply if we have a valid config snapshot
+                    if ((state.configSnapshot as Record<string, unknown>)?.hash) {
+                      await applyConfig(state);
+                      // Wait for gateway restart + reconnection
+                      await new Promise((r) => setTimeout(r, 2500));
+                    }
+                  } catch (err) {
+                    console.error("Wizard: failed to save config", err);
+                  } finally {
+                    state.wizardSaving = false;
+                  }
+                  state.onboarding = false;
+                  state.wizardStep = 1;
+                  state.setTab("chat");
+                },
+                onAnimationEnd: () => {
+                  state.wizardAnimating = false;
+                },
+                renderChannelStep: () => {
+                  const configValue = state.configForm;
+                  const modelsSection = configValue?.models as Record<string, unknown> | undefined;
+                  const providersObj = modelsSection?.providers as
+                    | Record<string, unknown>
+                    | undefined;
+                  const availableModels: Array<{ value: string; label: string }> = [];
+                  if (providersObj) {
+                    for (const [provId, provData] of Object.entries(providersObj)) {
+                      const prov = provData as Record<string, unknown>;
+                      const models = prov.models as
+                        | Array<{ id: string; name?: string }>
+                        | undefined;
+                      if (models) {
+                        for (const m of models) {
+                          availableModels.push({
+                            value: `${provId}/${m.id}`,
+                            label: `${provId}/${m.name || m.id}`,
+                          });
+                        }
+                      }
+                    }
+                  }
+                  const modelGroups = providersObj
+                    ? Object.entries(providersObj)
+                        .map(([provId, provData]) => {
+                          const prov = provData as Record<string, unknown>;
+                          const models =
+                            (prov.models as Array<{ id: string; name?: string }>) ?? [];
+                          return {
+                            label: provId,
+                            items: models.map((m) => ({
+                              value: `${provId}/${m.id}`,
+                              label: m.name || m.id,
+                            })),
+                          };
+                        })
+                        .filter((g) => g.items.length > 0)
+                    : [];
+                  const agentsObj = configValue?.agents as Record<string, unknown> | undefined;
+                  const agentsList = (agentsObj?.list ?? []) as Array<{
+                    id: string;
+                    identity?: { name?: string };
+                  }>;
+                  const availableAgents = agentsList.map((a) => ({
+                    id: a.id,
+                    name: a.identity?.name ?? a.id,
+                  }));
+                  return renderChannelsQuickAdd({
+                    form: state.channelQuickAddForm,
+                    expanded: true,
+                    busy: state.channelQuickAddBusy,
+                    error: state.channelQuickAddError,
+                    availableModels,
+                    modelGroups,
+                    availableAgents,
+                    onToggle: () => {},
+                    onChannelTypeChange: (type) => {
+                      state.channelQuickAddForm = {
+                        ...state.channelQuickAddForm,
+                        channelType: type,
+                      };
+                    },
+                    onFieldChange: (field, value) => {
+                      state.channelQuickAddForm = { ...state.channelQuickAddForm, [field]: value };
+                    },
+                    agentDropdownOpen: state.chAgentDropdownOpen ?? false,
+                    onAgentDropdownToggle: () => {
+                      state.chAgentDropdownOpen = !state.chAgentDropdownOpen;
+                      if (state.chAgentDropdownOpen) {
+                        const close = () => {
+                          state.chAgentDropdownOpen = false;
+                          document.removeEventListener("click", close);
+                        };
+                        requestAnimationFrame(() =>
+                          document.addEventListener("click", close, { once: true }),
+                        );
+                      }
+                    },
+                    modelDropdownOpen: state.chModelDropdownOpen ?? false,
+                    modelDropdownExpandedGroups: state.chModelDropdownExpandedGroups ?? new Set(),
+                    onModelDropdownToggle: () => {
+                      state.chModelDropdownOpen = !state.chModelDropdownOpen;
+                      if (state.chModelDropdownOpen) {
+                        const close = () => {
+                          state.chModelDropdownOpen = false;
+                          document.removeEventListener("click", close);
+                        };
+                        requestAnimationFrame(() =>
+                          document.addEventListener("click", close, { once: true }),
+                        );
+                      }
+                    },
+                    onModelDropdownGroupToggle: (label) => {
+                      const next = new Set(state.chModelDropdownExpandedGroups ?? new Set());
+                      if (next.has(label)) {
+                        next.delete(label);
+                      } else {
+                        next.add(label);
+                      }
+                      state.chModelDropdownExpandedGroups = next;
+                    },
+                    onSubmit: () => {},
+                  });
+                },
+              })
+            : nothing
+        }
+        ${
+          !state.onboarding
+            ? html`<section class="content-header">
           <div>
             ${state.tab === "usage" ? nothing : html`<div class="page-title">${titleForTab(state.tab)}</div>`}
             ${state.tab === "usage" ? nothing : html`<div class="page-sub">${subtitleForTab(state.tab)}</div>`}
           </div>
           <div class="page-meta">
-            ${state.lastError ? html`<div class="pill danger">${state.lastError}</div>` : nothing}
+            ${state.lastError ? html`<div class="pill danger">${translateError(state.lastError)}</div>` : nothing}
             ${isChat ? renderChatControls(state) : nothing}
           </div>
-        </section>
+        </section>`
+            : nothing
+        }
 
+        ${
+          state.onboarding
+            ? nothing
+            : html`
         ${
           state.tab === "overview"
             ? renderOverview({
@@ -1677,6 +1988,7 @@ export function renderApp(state: AppViewState) {
                 onScroll: (event) => state.handleLogsScroll(event),
               })
             : nothing
+        }`
         }
       </main>
       ${renderExecApprovalPrompt(state)}

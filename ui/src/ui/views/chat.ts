@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import { ref } from "lit/directives/ref.js";
-import { t } from "../../i18n/index.ts";
 import { repeat } from "lit/directives/repeat.js";
+import { t } from "../../i18n/index.ts";
 import {
   renderMessageGroup,
   renderReadingIndicatorGroup,
@@ -87,8 +87,21 @@ const COMPACTION_TOAST_DURATION_MS = 5000;
 const FALLBACK_TOAST_DURATION_MS = 8000;
 
 function adjustTextareaHeight(el: HTMLTextAreaElement) {
+  // Save current height to avoid transition jump
+  const currentHeight = el.offsetHeight;
+  el.style.transition = "none";
   el.style.height = "auto";
-  el.style.height = `${el.scrollHeight}px`;
+  const scrollH = el.scrollHeight;
+  // Cap at 8 lines (14px * 1.45 ≈ 20.3px per line)
+  const maxHeight = Math.round(20.3 * 8) + 20;
+  const minHeight = document.activeElement === el ? 120 : 40;
+  const targetHeight = Math.max(minHeight, Math.min(scrollH, maxHeight));
+  // Restore current height, then animate to target
+  el.style.height = `${currentHeight}px`;
+  // Force reflow so browser registers the starting height
+  void el.offsetHeight;
+  el.style.transition = "";
+  el.style.height = `${targetHeight}px`;
 }
 
 function renderCompactionIndicator(status: CompactionIndicatorStatus | null | undefined) {
@@ -131,10 +144,16 @@ function renderFallbackIndicator(status: FallbackIndicatorStatus | null | undefi
   }
   const details = [
     `${t("chatView.selected")} ${status.selected}`,
-    phase === "cleared" ? `${t("chatView.activeFallback")} ${status.selected}` : `${t("chatView.activeFallback")} ${status.active}`,
-    phase === "cleared" && status.previous ? `${t("chatView.previousFallback")} ${status.previous}` : null,
+    phase === "cleared"
+      ? `${t("chatView.activeFallback")} ${status.selected}`
+      : `${t("chatView.activeFallback")} ${status.active}`,
+    phase === "cleared" && status.previous
+      ? `${t("chatView.previousFallback")} ${status.previous}`
+      : null,
     status.reason ? `${t("chatView.reason")} ${status.reason}` : null,
-    status.attempts.length > 0 ? `${t("chatView.attempts")} ${status.attempts.slice(0, 3).join(" | ")}` : null,
+    status.attempts.length > 0
+      ? `${t("chatView.attempts")} ${status.attempts.slice(0, 3).join(" | ")}`
+      : null,
   ]
     .filter(Boolean)
     .join(" • ");
@@ -384,7 +403,9 @@ export function renderChat(props: ChatProps) {
                       <div class="chat-queue__text">
                         ${
                           item.text ||
-                          (item.attachments?.length ? `${t("shared.image")} (${item.attachments.length})` : "")
+                          (item.attachments?.length
+                            ? `${t("shared.image")} (${item.attachments.length})`
+                            : "")
                         }
                       </div>
                       <button
@@ -453,6 +474,9 @@ export function renderChat(props: ChatProps) {
                 const target = e.target as HTMLTextAreaElement;
                 adjustTextareaHeight(target);
                 props.onDraftChange(target.value);
+              }}
+              @blur=${(e: Event) => {
+                adjustTextareaHeight(e.target as HTMLTextAreaElement);
               }}
               @paste=${(e: ClipboardEvent) => handlePaste(e, props)}
               placeholder=${composePlaceholder}
@@ -534,7 +558,10 @@ function buildChatItems(props: ChatProps): Array<ChatItem | MessageGroup> {
       key: "chat:history:notice",
       message: {
         role: "system",
-        content: `${t("chatView.showingLast", { limit: String(CHAT_HISTORY_RENDER_LIMIT), hidden: String(historyStart) })}`,
+        content: t("chatView.showingLast", {
+          limit: String(CHAT_HISTORY_RENDER_LIMIT),
+          hidden: String(historyStart),
+        }),
         timestamp: Date.now(),
       },
     });

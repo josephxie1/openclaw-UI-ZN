@@ -95,6 +95,14 @@ declare global {
 const bootAssistantIdentity = normalizeAssistantIdentity({});
 
 function resolveOnboardingMode(): boolean {
+  // Desktop Electron bridge
+  const desktop = (window as unknown as Record<string, unknown>).desktop as
+    | { isOnboarding?: boolean }
+    | undefined;
+  if (desktop?.isOnboarding) {
+    return true;
+  }
+  // URL parameter fallback
   if (!window.location.search) {
     return false;
   }
@@ -121,6 +129,13 @@ export class OpenClawApp extends LitElement {
   @state() password = "";
   @state() tab: Tab = "chat";
   @state() onboarding = resolveOnboardingMode();
+  @state() wizardStep = 1;
+  @state() wizardDirection = 1;
+  @state() wizardAnimating = false;
+  @state() wizardPresetDropdownOpen = false;
+  @state() wizardModelDropdownOpen = false;
+  @state() wizardApiKeyVisible = false;
+  @state() wizardSaving = false;
   @state() connected = false;
   @state() theme: ThemeMode = this.settings.theme ?? "system";
   @state() themeResolved: ResolvedTheme = "dark";

@@ -40,6 +40,13 @@ export type AppViewState = {
   password: string;
   tab: Tab;
   onboarding: boolean;
+  wizardStep: number;
+  wizardDirection: number;
+  wizardAnimating: boolean;
+  wizardPresetDropdownOpen: boolean;
+  wizardModelDropdownOpen: boolean;
+  wizardApiKeyVisible: boolean;
+  wizardSaving: boolean;
   basePath: string;
   connected: boolean;
   theme: ThemeMode;

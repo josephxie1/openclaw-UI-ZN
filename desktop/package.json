@@ -12,7 +12,7 @@
     "start": "electron ."
   },
   "devDependencies": {
-    "electron": "^34.0.0",
+    "electron": "40.0.0",
     "electron-builder": "^25.0.0"
   },
   "build": {
@@ -24,7 +24,11 @@
     "files": [
       "main.js",
       "preload.js",
-      "icon.png"
+      "splash.html",
+      "icon.png",
+      "icon-tray.png",
+      "icon-trayTemplate.png",
+      "icon-trayTemplate@2x.png"
     ],
     "extraResources": [
       {
