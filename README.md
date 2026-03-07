@@ -29,7 +29,23 @@
 - Usage 页面自动刷新
 - Block Streaming 支持（飞书消息分段实时发送）
 
-### 🛡 性能修复
+### � 聊天界面升级 (v2026.3.7)
+
+- **Shiki 语法高亮** — 集成 Shiki 引擎（github-dark 主题），支持 40+ 编程语言自动识别
+- **块级 Markdown 缓存** — 流式输出性能大幅提升，仅重渲染最后一个块
+- **🧠 思维推理面板** — 可折叠的 AI 思考过程面板，自动提取首行作为摘要标题
+- **工具调用卡片** — 三态图标（加载动画 / ✅ 完成 / 🔴 错误），折叠式卡片
+- **聊天布局优化** — 无边框气泡、发送者名称加粗、宽屏体验优化
+- **悬停复制按钮** — 鼠标悬停消息时显示一键复制
+
+### 📂 侧边栏会话历史 (v2026.3.7)
+
+- Chat 手风琴组下方显示**会话历史列表**
+- 每个会话显示友好名称 + 相对时间（如 5m, 2h, 3d）
+- 当前活跃会话左侧高亮标识，点击快速切换
+- 新会话按钮创建独立 session，每个会话有独立聊天记录
+
+### �🛡 性能修复
 
 - 修复大配置文件 `config.get` RangeError 崩溃问题
 - Session 状态追踪独立于 diagnostics 开关，始终启用
@@ -69,7 +85,7 @@ node --version
 #### 方式一：直接安装（最简单）
 
 ```bash
-npm install -g https://github.com/josephxie1/openclaw-UI--Chinese/releases/download/v1.0.0/openclaw-2026.3.2.tgz
+npm install -g https://github.com/josephxie1/openclaw-UI--Chinese/releases/download/v2026.3.7-zh/openclaw-2026.3.2.tgz
 ```
 
 #### 方式二：一键脚本安装（自动检测并安装 Node.js）
@@ -111,7 +127,7 @@ npm install -g openclaw-*.tgz
 #### 方式一：直接安装（最简单）
 
 ```powershell
-npm install -g https://github.com/josephxie1/openclaw-UI--Chinese/releases/download/v1.0.0/openclaw-2026.3.2.tgz
+npm install -g https://github.com/josephxie1/openclaw-UI--Chinese/releases/download/v2026.3.7-zh/openclaw-2026.3.2.tgz
 ```
 
 #### 方式二：一键脚本安装（自动检测并安装 Node.js）
