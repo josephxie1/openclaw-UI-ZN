@@ -751,11 +751,7 @@ app
       process.env.OPENCLAW_ONBOARDING = "1";
     }
 
-    // Show window with splash immediately
-    createWindow();
-    createTray();
-
-    // macOS application menu bar
+    // macOS application menu bar (must be set before createWindow for packaged builds)
     const appMenu = Menu.buildFromTemplate([
       {
         label: app.name,
@@ -795,6 +791,10 @@ app
       },
     ]);
     Menu.setApplicationMenu(appMenu);
+
+    // Show window with splash immediately
+    createWindow();
+    createTray();
 
     // If started with --hidden (e.g. from launchctl), don't show window
     if (startHidden && mainWindow) {
