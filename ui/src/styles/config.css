@@ -2698,6 +2698,33 @@
   color: #fecaca;
 }
 
+/* Snapshot dashboard layout */
+.snapshot-dashboard {
+  margin-top: 16px;
+}
+
+.snapshot-status-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.snapshot-status-row .stat {
+  flex: 1;
+}
+
+.snapshot-charts {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.donut-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Stats — Neutral Dark */
 .ov-card--stats {
   background: linear-gradient(135deg, #374151, #4b5563) !important;

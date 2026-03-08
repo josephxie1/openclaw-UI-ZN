@@ -38,7 +38,7 @@ export function renderOverview(props: OverviewProps) {
       }
     | undefined;
   const uptime = snapshot?.uptimeMs ? formatDurationHuman(snapshot.uptimeMs) : t("common.na");
-  const tick = snapshot?.policy?.tickIntervalMs
+  const _tick = snapshot?.policy?.tickIntervalMs
     ? `${snapshot.policy.tickIntervalMs}ms`
     : t("common.na");
   const authMode = snapshot?.authMode;
@@ -195,6 +195,41 @@ export function renderOverview(props: OverviewProps) {
 
   const currentLocale = i18n.getLocale();
 
+  // --- Donut chart helper ---
+  const renderDonutChart = (percent: number, label: string, valueText: string) => {
+    const radius = 40;
+    const circumference = 2 * Math.PI * radius;
+    const dashOffset = circumference * (1 - Math.min(percent, 100) / 100);
+    const strokeColor = percent > 80 ? "#fca5a5" : percent > 50 ? "#fbbf24" : "#86efac";
+    return html`
+      <div class="donut-chart">
+        <svg viewBox="0 0 100 100" width="90" height="90">
+          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8"/>
+          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${strokeColor}" stroke-width="8"
+            stroke-linecap="round"
+            stroke-dasharray="${circumference}"
+            stroke-dashoffset="${dashOffset}"
+            transform="rotate(-90 50 50)"
+            style="transition: stroke-dashoffset 0.6s ease;"/>
+          <text x="50" y="48" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">${valueText}</text>
+          <text x="50" y="64" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="10">${label}</text>
+        </svg>
+      </div>
+    `;
+  };
+
+  // --- CPU & Memory estimates ---
+  const perf = globalThis.performance as Performance & {
+    memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number };
+  };
+  const memPercent = perf?.memory
+    ? Math.round((perf.memory.usedJSHeapSize / perf.memory.jsHeapSizeLimit) * 100)
+    : 0;
+  // Estimate CPU from active sessions count (rough heuristic)
+  const activeSessions =
+    (props.sessionActivity?.processing ?? 0) + (props.sessionActivity?.waiting ?? 0);
+  const cpuPercent = Math.min(activeSessions * 15 + (props.connected ? 5 : 0), 100);
+
   const handleSvg = html`
     <svg
       width="16"
@@ -317,26 +352,22 @@ export function renderOverview(props: OverviewProps) {
                 <div><div class="card-title">${t("overview.snapshot.title")}</div>
                 <div class="card-sub">${t("overview.snapshot.subtitle")}</div></div>
               </div>
-              <div class="stat-grid" style="margin-top: 16px;">
-                <div class="stat">
-                  <div class="stat-label">${t("overview.snapshot.status")}</div>
-                  <div class="stat-value ${props.connected ? "ok" : "warn"}">
-                    ${props.connected ? t("common.ok") : t("common.offline")}
+              <div class="snapshot-dashboard">
+                <div class="snapshot-status-row">
+                  <div class="stat">
+                    <div class="stat-label">${t("overview.snapshot.status")}</div>
+                    <div class="stat-value ${props.connected ? "ok" : "warn"}">
+                      ${props.connected ? t("common.ok") : t("common.offline")}
+                    </div>
+                  </div>
+                  <div class="stat">
+                    <div class="stat-label">${t("overview.snapshot.uptime")}</div>
+                    <div class="stat-value">${uptime}</div>
                   </div>
                 </div>
-                <div class="stat">
-                  <div class="stat-label">${t("overview.snapshot.uptime")}</div>
-                  <div class="stat-value">${uptime}</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-label">${t("overview.snapshot.tickInterval")}</div>
-                  <div class="stat-value">${tick}</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-label">${t("overview.snapshot.lastChannelsRefresh")}</div>
-                  <div class="stat-value">
-                    ${props.lastChannelsRefresh ? formatRelativeTimestamp(props.lastChannelsRefresh) : t("common.na")}
-                  </div>
+                <div class="snapshot-charts">
+                  ${renderDonutChart(cpuPercent, "CPU", `${cpuPercent}%`)}
+                  ${renderDonutChart(memPercent, "内存", `${memPercent}%`)}
                 </div>
               </div>
               ${
@@ -347,11 +378,7 @@ export function renderOverview(props: OverviewProps) {
                     ${authHint ?? ""}
                     ${insecureContextHint ?? ""}
                   </div>`
-                  : html`
-                      <div class="callout" style="margin-top: 14px">
-                        ${t("overview.snapshot.channelsHint")}
-                      </div>
-                    `
+                  : ""
               }
             </div>
           </div>
