@@ -209,6 +209,7 @@ export function renderOverview(props: OverviewProps) {
       colorOverride ?? (percent > 80 ? "#fca5a5" : percent > 50 ? "#fbbf24" : "#86efac");
     return html`
       <div class="donut-chart">
+        <div class="donut-chart__label">${label}</div>
         <svg viewBox="0 0 100 100" width="90" height="90">
           <circle cx="50" cy="50" r="${radius}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8"/>
           <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${strokeColor}" stroke-width="8"
@@ -217,8 +218,7 @@ export function renderOverview(props: OverviewProps) {
             stroke-dashoffset="${dashOffset}"
             transform="rotate(-90 50 50)"
             style="transition: stroke-dashoffset 0.6s ease;"/>
-          <text x="50" y="48" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">${valueText}</text>
-          <text x="50" y="64" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="10">${label}</text>
+          <text x="50" y="55" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">${valueText}</text>
         </svg>
       </div>
     `;

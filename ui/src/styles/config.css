@@ -2714,6 +2714,15 @@
   align-items: center;
 }
 
+.donut-chart__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Stats — Neutral Dark */
 .ov-card--stats {
   background: linear-gradient(135deg, #374151, #4b5563) !important;
