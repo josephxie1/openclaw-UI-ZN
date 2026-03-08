@@ -12,6 +12,7 @@ const STORAGE_KEY = "oc-overview-card-order-v2";
 @customElement("oc-overview-layout")
 export class OcOverviewLayout extends LitElement {
   private _swapy: Swapy | null = null;
+  private _restoringOrder = false;
 
   createRenderRoot() {
     return this;
@@ -29,6 +30,20 @@ export class OcOverviewLayout extends LitElement {
       this._restoreOrder();
       this._initSwapy();
     });
+  }
+
+  protected updated() {
+    // Re-apply saved order after lit re-renders (e.g. state poll updates)
+    // This is needed because lit recreates DOM in template order on re-render
+    if (!this._restoringOrder) {
+      this._restoringOrder = true;
+      requestAnimationFrame(() => {
+        this._restoreOrder();
+        this._restoringOrder = false;
+        // Re-init swapy after DOM reorder so it picks up the new positions
+        this._swapy?.update();
+      });
+    }
   }
 
   disconnectedCallback() {
@@ -67,7 +82,7 @@ export class OcOverviewLayout extends LitElement {
       return;
     }
 
-    this._swapy = createSwapy(container, {
+    this._swapy = createSwapy(container as HTMLElement, {
       swapMode: "hover",
       animation: "dynamic",
       autoScrollOnDrag: true,
