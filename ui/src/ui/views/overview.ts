@@ -224,7 +224,7 @@ export function renderOverview(props: OverviewProps) {
       <div class="overview-swapy">
         <div data-swapy-slot="access">
           <div data-swapy-item="access">
-            <div class="card">
+            <div class="card ov-card--access">
               <div class="card-header-row">${dragHandleOnly}
                 <div><div class="card-title">${t("overview.access.title")}</div>
                 <div class="card-sub">${t("overview.access.subtitle")}</div></div>
@@ -312,7 +312,7 @@ export function renderOverview(props: OverviewProps) {
 
         <div data-swapy-slot="snapshot">
           <div data-swapy-item="snapshot">
-            <div class="card">
+            <div class="card ov-card--snapshot">
               <div class="card-header-row">${dragHandleFree}
                 <div><div class="card-title">${t("overview.snapshot.title")}</div>
                 <div class="card-sub">${t("overview.snapshot.subtitle")}</div></div>
@@ -359,7 +359,7 @@ export function renderOverview(props: OverviewProps) {
 
         <div data-swapy-slot="stats">
           <div data-swapy-item="stats">
-            <div class="card stat-cards-row">
+            <div class="card stat-cards-row ov-card--stats">
               <div class="card-header-row">${dragHandleFree}
                 <div><div class="card-title">${"统计概览"}</div></div>
               </div>
@@ -388,7 +388,7 @@ export function renderOverview(props: OverviewProps) {
 
         <div data-swapy-slot="activity">
           <div data-swapy-item="activity">
-            <div class="card">
+            <div class="card ov-card--activity">
               <div class="card-header-row">${dragHandleFree}
                 <div><div class="card-title">${t("overview.activity.title")}</div>
                 <div class="card-sub">${t("overview.activity.subtitle")}</div></div>
@@ -456,7 +456,7 @@ export function renderOverview(props: OverviewProps) {
 
         <div data-swapy-slot="notes">
           <div data-swapy-item="notes">
-            <div class="card">
+            <div class="card ov-card--notes">
               <div class="card-header-row">${dragHandleFree}
                 <div><div class="card-title">${t("overview.notes.title")}</div>
                 <div class="card-sub">${t("overview.notes.subtitle")}</div></div>

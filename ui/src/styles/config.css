@@ -2558,3 +2558,217 @@
   border-radius: var(--radius-xl);
   background: var(--secondary);
 }
+
+/* ===========================================
+   Overview Card Color Variants
+   =========================================== */
+
+/* Access — Blue / Indigo */
+.ov-card--access {
+  background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+  border-color: #6366f1 !important;
+  color: #e0e7ff;
+}
+
+.ov-card--access .card-title {
+  color: #fff;
+}
+
+.ov-card--access .card-sub {
+  color: #c7d2fe;
+}
+
+.ov-card--access .swapy-handle {
+  color: #c7d2fe;
+}
+
+.ov-card--access .field span {
+  color: #e0e7ff;
+}
+
+.ov-card--access .muted {
+  color: #a5b4fc;
+}
+
+.ov-card--access .btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.ov-card--access .btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.ov-card--access input,
+.ov-card--access select {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.ov-card--access input::placeholder {
+  color: #a5b4fc;
+}
+
+/* Snapshot — Emerald Green */
+.ov-card--snapshot {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  border-color: #10b981 !important;
+  color: #d1fae5;
+}
+
+.ov-card--snapshot .card-title {
+  color: #fff;
+}
+
+.ov-card--snapshot .card-sub {
+  color: #a7f3d0;
+}
+
+.ov-card--snapshot .swapy-handle {
+  color: #a7f3d0;
+}
+
+.ov-card--snapshot .stat-label {
+  color: #d1fae5;
+}
+
+.ov-card--snapshot .stat-value {
+  color: #fff;
+}
+
+.ov-card--snapshot .stat-value.ok {
+  color: #fef08a;
+}
+
+.ov-card--snapshot .stat-value.warn {
+  color: #fca5a5;
+}
+
+.ov-card--snapshot .muted {
+  color: #a7f3d0;
+}
+
+.ov-card--snapshot .callout {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #d1fae5;
+}
+
+.ov-card--snapshot .callout.danger {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #fecaca;
+}
+
+/* Stats — Neutral Dark */
+.ov-card--stats {
+  background: linear-gradient(135deg, #374151, #4b5563) !important;
+  border-color: #4b5563 !important;
+  color: #e5e7eb;
+}
+
+.ov-card--stats .card-title {
+  color: #fbbf24;
+}
+
+.ov-card--stats .swapy-handle {
+  color: #9ca3af;
+}
+
+.ov-card--stats .stat-label {
+  color: #d1d5db;
+}
+
+.ov-card--stats .stat-value {
+  color: #fff;
+}
+
+.ov-card--stats .muted {
+  color: #9ca3af;
+}
+
+/* Activity — Purple */
+.ov-card--activity {
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6) !important;
+  border-color: #8b5cf6 !important;
+  color: #ede9fe;
+}
+
+.ov-card--activity .card-title {
+  color: #fff;
+}
+
+.ov-card--activity .card-sub {
+  color: #c4b5fd;
+}
+
+.ov-card--activity .swapy-handle {
+  color: #c4b5fd;
+}
+
+.ov-card--activity .stat-label {
+  color: #ddd6fe;
+}
+
+.ov-card--activity .stat-value {
+  color: #fff;
+}
+
+.ov-card--activity .stat-value.ok {
+  color: #86efac;
+}
+
+.ov-card--activity .stat-value.warn {
+  color: #fca5a5;
+}
+
+.ov-card--activity .muted {
+  color: #c4b5fd;
+}
+
+.ov-card--activity .activity-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.ov-card--activity .activity-dot.processing {
+  background: #86efac;
+}
+
+.ov-card--activity .activity-dot.waiting {
+  background: #fbbf24;
+}
+
+.ov-card--activity .activity-card__badge {
+  color: #ede9fe;
+}
+
+/* Notes — Warm Yellow */
+.ov-card--notes {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+  border-color: #fbbf24 !important;
+  color: #451a03;
+}
+
+.ov-card--notes .card-title {
+  color: #1c1917;
+}
+
+.ov-card--notes .card-sub {
+  color: #78350f;
+}
+
+.ov-card--notes .swapy-handle {
+  color: #92400e;
+}
+
+.ov-card--notes .note-title {
+  color: #1c1917;
+  font-weight: 700;
+}
+
+.ov-card--notes .muted {
+  color: #78350f;
+}
