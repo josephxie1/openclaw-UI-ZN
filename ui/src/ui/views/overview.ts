@@ -479,11 +479,13 @@ export function renderOverview(props: OverviewProps) {
                     props.sessionActivity.sessions.length > 0
                       ? html`
                       <div class="activity-cards" style="margin-top: 14px;">
-                        ${props.sessionActivity.sessions.map(
-                          (s) => html`
+                        ${props.sessionActivity.sessions.map((s) => {
+                          // Extract agent ID: "agent:dev:main" → "dev", "agent:test:web:123" → "test"
+                          const agentId = s.key.split(":")[1] ?? s.key;
+                          return html`
                             <div class="activity-card ${s.state}">
                               <div class="activity-card__header">
-                                <img class="activity-card__avatar" src="${avatarFromName(s.key)}" alt="" />
+                                <img class="activity-card__avatar" src="${avatarFromName(agentId)}" alt="" />
                                 <span class="activity-dot ${s.state}"></span>
                                 <span class="activity-card__badge ${s.state}">
                                   ${t(`overview.activity.state.${s.state}`)}
@@ -503,8 +505,8 @@ export function renderOverview(props: OverviewProps) {
                                 }
                               </div>
                             </div>
-                          `,
-                        )}
+                          `;
+                        })}
                       </div>
                     `
                       : html`<div class="muted" style="margin-top: 14px;">${t("overview.activity.empty")}</div>`
