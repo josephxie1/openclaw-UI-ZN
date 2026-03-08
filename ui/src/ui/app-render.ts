@@ -83,7 +83,7 @@ import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
 import { renderInstances } from "./views/instances.ts";
 import { renderLogs } from "./views/logs.ts";
-import { renderDefaultModelConfig } from "./views/models-default-config.ts";
+import "./views/models-default-config.ts";
 import { renderModelsQuickAdd, PROVIDER_PRESETS } from "./views/models-quick-add.ts";
 import { renderNodes, renderChannelPairings } from "./views/nodes.ts";
 import { renderOverview } from "./views/overview.ts";
@@ -2107,68 +2107,40 @@ export function renderApp(state: AppViewState) {
                     }>;
                     const fm = mM[0];
                     const curImg = fm ? `${fm.provider ?? ""}/${fm.model ?? ""}` : "";
-                    return renderDefaultModelConfig({
-                      modelGroups,
-                      visionModelGroups,
-                      hasVisionModels,
-                      currentDefaultModel: curDef,
-                      currentImageModel: curImg,
-                      saving: state.configSaving,
-                      defaultModelDropdownOpen: state.defaultModelDropdownOpen ?? false,
-                      onDefaultModelDropdownToggle: () => {
-                        state.defaultModelDropdownOpen = !state.defaultModelDropdownOpen;
-                        state.imageModelDropdownOpen = false;
-                      },
-                      defaultModelExpandedGroups: state.defaultModelExpandedGroups ?? new Set(),
-                      onDefaultModelGroupToggle: (label: string) => {
-                        const s = state.defaultModelExpandedGroups ?? new Set<string>();
-                        if (s.has(label)) {
-                          s.delete(label);
-                        } else {
-                          s.add(label);
-                        }
-                        state.defaultModelExpandedGroups = new Set(s);
-                      },
-                      imageModelDropdownOpen: state.imageModelDropdownOpen ?? false,
-                      onImageModelDropdownToggle: () => {
-                        state.imageModelDropdownOpen = !state.imageModelDropdownOpen;
-                        state.defaultModelDropdownOpen = false;
-                      },
-                      imageModelExpandedGroups: state.imageModelExpandedGroups ?? new Set(),
-                      onImageModelGroupToggle: (label: string) => {
-                        const s = state.imageModelExpandedGroups ?? new Set<string>();
-                        if (s.has(label)) {
-                          s.delete(label);
-                        } else {
-                          s.add(label);
-                        }
-                        state.imageModelExpandedGroups = new Set(s);
-                      },
-                      onDefaultModelChange: (model: string) => {
-                        state.defaultModelDropdownOpen = false;
-                        updateConfigFormValue(
-                          state,
-                          ["agents", "defaults", "model"],
-                          model || undefined,
-                        );
-                        void applyConfig(state);
-                      },
-                      onImageModelChange: (model: string) => {
-                        state.imageModelDropdownOpen = false;
-                        if (!model) {
-                          updateConfigFormValue(state, ["tools", "media", "models"], []);
-                        } else {
-                          const [provider, ...rest] = model.split("/");
-                          const modelId = rest.join("/");
+                    return html`
+                      <oc-default-model-config
+                        .modelGroups=${modelGroups}
+                        .visionModelGroups=${visionModelGroups}
+                        .currentDefaultModel=${curDef}
+                        .currentImageModel=${curImg}
+                        ?saving=${state.configSaving}
+                        ?hasVisionModels=${hasVisionModels}
+                        @default-model-change=${(e: CustomEvent) => {
+                          const model = e.detail.model as string;
                           updateConfigFormValue(
                             state,
-                            ["tools", "media", "models"],
-                            [{ provider, model: modelId }],
+                            ["agents", "defaults", "model"],
+                            model || undefined,
                           );
-                        }
-                        void applyConfig(state);
-                      },
-                    });
+                          void applyConfig(state);
+                        }}
+                        @image-model-change=${(e: CustomEvent) => {
+                          const model = e.detail.model as string;
+                          if (!model) {
+                            updateConfigFormValue(state, ["tools", "media", "models"], []);
+                          } else {
+                            const [provider, ...rest] = model.split("/");
+                            const modelId = rest.join("/");
+                            updateConfigFormValue(
+                              state,
+                              ["tools", "media", "models"],
+                              [{ provider, model: modelId }],
+                            );
+                          }
+                          void applyConfig(state);
+                        }}
+                      ></oc-default-model-config>
+                    `;
                   })()}
                 </div>
               `
