@@ -22,10 +22,6 @@ export type DefaultModelConfigProps = {
 };
 
 export function renderDefaultModelConfig(props: DefaultModelConfigProps) {
-  const notSetItem: DropdownItem = {
-    value: "",
-    label: t("defaultModelConfig.notSet") ?? "— 未设置 —",
-  };
   const disabledItem: DropdownItem = {
     value: "",
     label: t("defaultModelConfig.disabled") ?? "— 关闭 —",
@@ -42,7 +38,7 @@ export function renderDefaultModelConfig(props: DefaultModelConfigProps) {
           ${renderDropdown({
             value: props.currentDefaultModel || null,
             placeholder: t("defaultModelConfig.notSet") ?? "— 未设置 —",
-            items: [notSetItem, ...props.availableModels],
+            items: props.availableModels,
             open: props.defaultModelDropdownOpen,
             disabled: props.saving,
             onToggle: props.onDefaultModelDropdownToggle,
