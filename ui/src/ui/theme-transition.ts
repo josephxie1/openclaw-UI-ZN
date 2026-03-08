@@ -17,6 +17,8 @@ type DocumentWithViewTransition = Document & {
   startViewTransition?: (callback: () => void) => { finished: Promise<void> };
 };
 
+const TRANSITION_DURATION = 400; // ms
+
 const clamp01 = (value: number) => {
   if (Number.isNaN(value)) {
     return 0.5;
@@ -42,6 +44,47 @@ const cleanupThemeTransition = (root: HTMLElement) => {
   root.style.removeProperty("--theme-switch-x");
   root.style.removeProperty("--theme-switch-y");
 };
+
+/**
+ * Inject a temporary <style> that forces smooth transitions on ALL elements
+ * during the theme switch. Uses !important to override element-level transitions.
+ * Removed automatically after the transition duration.
+ */
+let _transitionStyle: HTMLStyleElement | null = null;
+let _transitionTimer: ReturnType<typeof setTimeout> | null = null;
+
+function injectTransitionOverride() {
+  // Clear any pending cleanup from a previous switch
+  if (_transitionTimer) {
+    clearTimeout(_transitionTimer);
+    _transitionTimer = null;
+  }
+
+  if (!_transitionStyle) {
+    _transitionStyle = document.createElement("style");
+    _transitionStyle.setAttribute("data-theme-transition", "");
+    _transitionStyle.textContent = `
+      *, *::before, *::after {
+        transition: background-color ${TRANSITION_DURATION}ms ease,
+                    color ${TRANSITION_DURATION}ms ease,
+                    border-color ${TRANSITION_DURATION}ms ease,
+                    box-shadow ${TRANSITION_DURATION}ms ease,
+                    fill ${TRANSITION_DURATION}ms ease,
+                    stroke ${TRANSITION_DURATION}ms ease !important;
+      }
+    `;
+    document.head.appendChild(_transitionStyle);
+  }
+
+  // Remove after the transition completes
+  _transitionTimer = setTimeout(() => {
+    if (_transitionStyle?.parentNode) {
+      _transitionStyle.parentNode.removeChild(_transitionStyle);
+    }
+    _transitionStyle = null;
+    _transitionTimer = null;
+  }, TRANSITION_DURATION + 50);
+}
 
 export const startThemeTransition = ({
   nextTheme,
@@ -104,6 +147,10 @@ export const startThemeTransition = ({
     return;
   }
 
-  applyTheme();
-  cleanupThemeTransition(root);
+  // Fallback: inject temporary transition style, then apply theme
+  injectTransitionOverride();
+  // Allow one frame for the <style> to take effect
+  requestAnimationFrame(() => {
+    applyTheme();
+  });
 };
