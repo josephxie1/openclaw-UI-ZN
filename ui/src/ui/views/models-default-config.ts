@@ -37,7 +37,7 @@ export function renderDefaultModelConfig(props: DefaultModelConfigProps) {
         <div class="card-title">${t("defaultModelConfig.title") ?? "默认模型配置"}</div>
         <div class="card-sub">${t("defaultModelConfig.subtitle") ?? "选择默认使用的主模型和图像理解模型"}</div>
       </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+      <div style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px;">
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <span style="font-size: 13px; font-weight: 500;">${t("defaultModelConfig.primaryModel") ?? "主模型"}</span>
           ${renderDropdown({

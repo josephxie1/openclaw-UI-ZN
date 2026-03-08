@@ -1869,7 +1869,8 @@
 }
 
 .models-page .quick-add-content {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   padding: 28px 32px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -1878,6 +1879,20 @@
 }
 
 :root[data-theme="dark"] .models-page .quick-add-content {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+.models-page>.card {
+  flex: 0 0 340px;
+  align-self: flex-start;
+  padding: 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+:root[data-theme="dark"] .models-page>.card {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
