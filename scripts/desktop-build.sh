@@ -34,7 +34,9 @@ case "$choice" in
     rsync -a --delete --exclude='control-ui' dist/ desktop/gateway/dist/
     rm -rf desktop/gateway/dist/control-ui
     cp -r dist/control-ui desktop/gateway/dist/control-ui
-    echo "    ✅ 后端 + UI 已同步"
+    mkdir -p desktop/gateway/docs/reference
+    rsync -a docs/reference/templates/ desktop/gateway/docs/reference/templates/
+    echo "    ✅ 后端 + UI + 模板 已同步"
 
     echo "==> 4/4 启动 Desktop Dev..."
     cd desktop
@@ -52,7 +54,9 @@ case "$choice" in
     rsync -a --delete --exclude='control-ui' dist/ desktop/gateway/dist/
     rm -rf desktop/gateway/dist/control-ui
     cp -r dist/control-ui desktop/gateway/dist/control-ui
-    echo "    ✅ 后端 + UI 已同步"
+    mkdir -p desktop/gateway/docs/reference
+    rsync -a docs/reference/templates/ desktop/gateway/docs/reference/templates/
+    echo "    ✅ 后端 + UI + 模板 已同步"
 
     echo "==> 4/4 构建 DMG..."
     cd desktop
