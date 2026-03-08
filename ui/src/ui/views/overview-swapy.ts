@@ -71,6 +71,7 @@ export class OcOverviewLayout extends LitElement {
       swapMode: "hover",
       animation: "dynamic",
       autoScrollOnDrag: true,
+      dragOnHold: true,
     });
 
     this._swapy.onSwapEnd((event) => {

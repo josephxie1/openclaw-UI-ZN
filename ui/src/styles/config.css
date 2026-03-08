@@ -2525,6 +2525,11 @@
 /* Swapy drag feedback */
 [data-swapy-item] {
   transition: transform 0.2s ease, opacity 0.2s ease;
+  cursor: grab;
+}
+
+[data-swapy-item]:active {
+  cursor: grabbing;
 }
 
 [data-swapy-highlighted] {
