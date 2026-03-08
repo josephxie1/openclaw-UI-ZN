@@ -83,6 +83,7 @@ import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
 import { renderInstances } from "./views/instances.ts";
 import { renderLogs } from "./views/logs.ts";
+import { renderDefaultModelConfig } from "./views/models-default-config.ts";
 import { renderModelsQuickAdd, PROVIDER_PRESETS } from "./views/models-quick-add.ts";
 import { renderNodes, renderChannelPairings } from "./views/nodes.ts";
 import { renderOverview } from "./views/overview.ts";
@@ -2047,6 +2048,94 @@ export function renderApp(state: AppViewState) {
                       }
                     },
                   })}
+                  ${(() => {
+                    // Build available models from config
+                    const providersObj = (
+                      (state.configForm as Record<string, unknown>)?.models as Record<
+                        string,
+                        unknown
+                      >
+                    )?.providers as Record<string, unknown> | undefined;
+                    const allModels: Array<{ value: string; label: string }> = [];
+                    const visionModels: Array<{ value: string; label: string }> = [];
+                    if (providersObj) {
+                      for (const [provId, provData] of Object.entries(providersObj)) {
+                        const prov = provData as Record<string, unknown>;
+                        const models = prov.models as
+                          | Array<{ id: string; name?: string; input?: string[] }>
+                          | undefined;
+                        if (models) {
+                          for (const m of models) {
+                            const entry = {
+                              value: `${provId}/${m.id}`,
+                              label: `${provId}/${m.name || m.id}`,
+                            };
+                            allModels.push(entry);
+                            if (m.input?.includes("image")) {
+                              visionModels.push(entry);
+                            }
+                          }
+                        }
+                      }
+                    }
+                    // Read current default model
+                    const agentsConfig = (state.configForm as Record<string, unknown>)?.agents as
+                      | Record<string, unknown>
+                      | undefined;
+                    const defaultsConfig = (agentsConfig?.defaults ?? {}) as Record<
+                      string,
+                      unknown
+                    >;
+                    const currentDefaultModel =
+                      typeof defaultsConfig.model === "string"
+                        ? defaultsConfig.model
+                        : typeof defaultsConfig.model === "object" && defaultsConfig.model
+                          ? (((defaultsConfig.model as Record<string, unknown>)
+                              .primary as string) ?? "")
+                          : "";
+                    // Read current image understanding model
+                    const toolsConfig = (state.configForm as Record<string, unknown>)?.tools as
+                      | Record<string, unknown>
+                      | undefined;
+                    const mediaConfig = (toolsConfig?.media ?? {}) as Record<string, unknown>;
+                    const mediaModels = (mediaConfig.models ?? []) as Array<{
+                      provider?: string;
+                      model?: string;
+                    }>;
+                    const firstMediaModel = mediaModels[0];
+                    const currentImageModel = firstMediaModel
+                      ? `${firstMediaModel.provider ?? ""}/${firstMediaModel.model ?? ""}`
+                      : "";
+                    return renderDefaultModelConfig({
+                      availableModels: allModels,
+                      visionModels,
+                      currentDefaultModel,
+                      currentImageModel,
+                      saving: state.configSaving,
+                      onDefaultModelChange: (model: string) => {
+                        updateConfigFormValue(
+                          state,
+                          ["agents", "defaults", "model"],
+                          model || undefined,
+                        );
+                        void applyConfig(state);
+                      },
+                      onImageModelChange: (model: string) => {
+                        if (!model) {
+                          updateConfigFormValue(state, ["tools", "media", "models"], []);
+                        } else {
+                          const [provider, ...rest] = model.split("/");
+                          const modelId = rest.join("/");
+                          updateConfigFormValue(
+                            state,
+                            ["tools", "media", "models"],
+                            [{ provider, model: modelId }],
+                          );
+                        }
+                        void applyConfig(state);
+                      },
+                    });
+                  })()}
                 </div>
               `
             : nothing
