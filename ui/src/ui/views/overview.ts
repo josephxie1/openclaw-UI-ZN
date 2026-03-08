@@ -206,19 +206,33 @@ export function renderOverview(props: OverviewProps) {
     const circumference = 2 * Math.PI * radius;
     const dashOffset = circumference * (1 - Math.min(percent, 100) / 100);
     const strokeColor =
-      colorOverride ?? (percent > 80 ? "#fca5a5" : percent > 50 ? "#fbbf24" : "#86efac");
+      colorOverride ?? (percent > 80 ? "#ff6b6b" : percent > 50 ? "#fbbf24" : "#34d399");
     return html`
       <div class="donut-chart">
         <div class="donut-chart__label">${label}</div>
-        <svg viewBox="0 0 100 100" width="90" height="90">
-          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8"/>
-          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${strokeColor}" stroke-width="8"
+        <svg viewBox="0 0 100 100" width="110" height="110">
+          <defs>
+            <filter id="glow-${label}" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feFlood flood-color="${strokeColor}" flood-opacity="0.6" result="color"/>
+              <feComposite in="color" in2="blur" operator="in" result="shadow"/>
+              <feMerge>
+                <feMergeNode in="shadow"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/>
+          <circle cx="50" cy="50" r="${radius}" fill="none" stroke="${strokeColor}" stroke-width="7"
             stroke-linecap="round"
             stroke-dasharray="${circumference}"
             stroke-dashoffset="${dashOffset}"
             transform="rotate(-90 50 50)"
+            filter="url(#glow-${label})"
             style="transition: stroke-dashoffset 0.6s ease;"/>
-          <text x="50" y="55" text-anchor="middle" fill="#fff" font-size="16" font-weight="700">${valueText}</text>
+          <text x="50" y="52" text-anchor="middle" dominant-baseline="middle"
+            fill="#fff" font-size="15" font-weight="800"
+            style="text-shadow: 0 0 8px rgba(255,255,255,0.3);">${valueText}</text>
         </svg>
       </div>
     `;
