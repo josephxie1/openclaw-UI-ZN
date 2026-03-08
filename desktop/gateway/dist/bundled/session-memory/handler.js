@@ -9,7 +9,7 @@ import "../../env-DijpAkAH.js";
 import "../../boolean-M-esQJt6.js";
 import "../../dock-DUCzi1P7.js";
 import "../../tokens-DhiG-E4H.js";
-import "../../pi-embedded-Dp6WYZdz.js";
+import "../../pi-embedded-DzwMw9AI.js";
 import "../../plugins-tZMHqQXn.js";
 import "../../accounts-CaRtAz_2.js";
 import "../../bindings-CVne_Hrz.js";

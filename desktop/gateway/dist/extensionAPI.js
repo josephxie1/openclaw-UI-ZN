@@ -7,7 +7,7 @@ import "./github-copilot-token-DqKkG5Fl.js";
 import "./env-Dd9-xtX7.js";
 import "./dock-COgSf8w1.js";
 import "./tokens-Cmye2J27.js";
-import { N as resolveAgentTimeoutMs, t as runEmbeddedPiAgent } from "./pi-embedded-NKJEz_6-.js";
+import { N as resolveAgentTimeoutMs, t as runEmbeddedPiAgent } from "./pi-embedded-BZ7hYyya.js";
 import "./plugins-406Mjpfh.js";
 import "./accounts-Dnvd8nR9.js";
 import "./bindings-CT_7AcEe.js";

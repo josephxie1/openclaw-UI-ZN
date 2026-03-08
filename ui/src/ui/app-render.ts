@@ -824,6 +824,8 @@ export function renderApp(state: AppViewState) {
                 sessionActivity: state.sessionActivity,
                 agents: state.agentsList?.agents ?? [],
                 costDaily: state.overviewCostDaily,
+                usageResult: state.overviewUsageResult,
+                weekUsageResult: state.overviewWeekUsageResult,
               })
             : nothing
         }

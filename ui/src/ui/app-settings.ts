@@ -439,23 +439,60 @@ export async function loadOverview(host: SettingsHost) {
   ]);
 }
 
-async function loadOverviewUsageCost(app: OpenClawApp) {
-  if (!(app as unknown as { client?: { request: Function } }).client) {
+async function loadOverviewUsageCost(state: {
+  client: import("./gateway.ts").GatewayBrowserClient | null;
+  connected: boolean;
+  overviewCostDaily: import("./types.ts").CostUsageSummary | null;
+  overviewUsageResult: import("./types.ts").SessionsUsageResult | null;
+  overviewWeekUsageResult: import("./types.ts").SessionsUsageResult | null;
+}) {
+  if (!state.client || !state.connected) {
     return;
   }
   try {
     const now = new Date();
-    const end = now.toISOString().slice(0, 10);
-    const start = new Date(now.getTime() - 6 * 86400000).toISOString().slice(0, 10);
-    const res = await (app as unknown as { client: { request: Function } }).client.request(
-      "usage.cost",
-      { startDate: start, endDate: end },
-    );
-    if (res) {
-      (app as unknown as { overviewCostDaily: unknown }).overviewCostDaily = res;
+    const today = now.toISOString().slice(0, 10);
+    const weekAgo = new Date(now.getTime() - 6 * 86400000).toISOString().slice(0, 10);
+    const [weekRes, dayRes] = await Promise.all([
+      state.client.request("sessions.usage", {
+        startDate: weekAgo,
+        endDate: today,
+        includeContextWeight: true,
+      }),
+      state.client.request("sessions.usage", {
+        startDate: today,
+        endDate: today,
+        includeContextWeight: true,
+      }),
+    ]);
+    if (weekRes) {
+      const result = weekRes as import("./types.ts").SessionsUsageResult;
+      const apiDaily = result.aggregates?.daily ?? [];
+      const dailyMap = new Map(apiDaily.map((d) => [d.date, d]));
+      // Build full 7-day array, filling missing dates with 0
+      const fullDaily: Array<{ date: string; totalTokens: number }> = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(now.getTime() - (6 - i) * 86400000);
+        const dateStr = d.toISOString().slice(0, 10);
+        const entry = dailyMap.get(dateStr);
+        fullDaily.push({
+          date: dateStr,
+          totalTokens: entry?.tokens ?? 0,
+        });
+      }
+      state.overviewCostDaily = {
+        updatedAt: result.updatedAt,
+        days: 7,
+        daily: fullDaily,
+        totals: result.totals,
+      } as import("./types.ts").CostUsageSummary;
+      state.overviewWeekUsageResult = result;
     }
-  } catch {
-    // Usage cost is optional for overview
+    if (dayRes) {
+      state.overviewUsageResult = dayRes as import("./types.ts").SessionsUsageResult;
+    }
+  } catch (err) {
+    console.warn("[overview] sessions.usage failed", err);
   }
 }
 

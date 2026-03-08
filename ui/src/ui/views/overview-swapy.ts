@@ -13,6 +13,7 @@ const STORAGE_KEY = "oc-overview-card-order-v3";
 @customElement("oc-overview-layout")
 export class OcOverviewLayout extends LitElement {
   private _swapy: Swapy | null = null;
+  private _observer: MutationObserver | null = null;
 
   createRenderRoot() {
     return this;
@@ -33,6 +34,8 @@ export class OcOverviewLayout extends LitElement {
 
   disconnectedCallback() {
     super.disconnectedCallback();
+    this._observer?.disconnect();
+    this._observer = null;
     this._swapy?.destroy();
     this._swapy = null;
   }
@@ -55,6 +58,13 @@ export class OcOverviewLayout extends LitElement {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(event.slotItemMap.asArray));
       }
     });
+
+    // Watch for direct child changes (e.g. when async data loads and cards re-render)
+    // Only childList on container itself — NOT subtree, to avoid Chart.js canvas noise
+    this._observer = new MutationObserver(() => {
+      this._swapy?.update();
+    });
+    this._observer.observe(container, { childList: true });
   }
 }
 

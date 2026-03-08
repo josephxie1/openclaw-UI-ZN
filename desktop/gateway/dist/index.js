@@ -2,7 +2,7 @@
 import "./paths-B4BZAPZh.js";
 import { B as theme, P as setVerbose, Q as tryParseLogLevel, T as toWhatsappJid, Y as ALLOWED_LOG_LEVELS, l as escapeRegExp, m as normalizeE164, n as assertWebChannel, z as isRich } from "./utils-BKDT474X.js";
 import "./thinking-BB3zi8pq.js";
-import { Nt as createDefaultDeps, _t as resolveCommitHash, t as getReplyFromConfig } from "./reply-C1JwH2dr.js";
+import { Nt as createDefaultDeps, _t as resolveCommitHash, t as getReplyFromConfig } from "./reply-BUqhtzk8.js";
 import "./agent-scope-D_zGtnox.js";
 import { d as visibleWidth, p as defaultRuntime, r as enableConsoleCapture } from "./subsystem-VTlWhMKb.js";
 import "./openclaw-root-rn0A27By.js";
@@ -114,7 +114,7 @@ import "./prompt-style-CuSDZZjo.js";
 import "./pairing-labels-DShqkaUs.js";
 import "./server-lifecycle-DyayHMG9.js";
 import "./stagger-Dikgy9tS.js";
-import { r as waitForever, t as monitorWebChannel } from "./channel-web-BzZtwdoS.js";
+import { r as waitForever, t as monitorWebChannel } from "./channel-web-6RXYoqte.js";
 import "./outbound-bOz10WpS.js";
 import "./session-TwxJDhtg.js";
 import "./login-DXLAmnRE.js";
@@ -123,9 +123,9 @@ import { t as ensureOpenClawCliOnPath } from "./path-env-CBn_tLuw.js";
 import { t as assertSupportedRuntime } from "./runtime-guard-C8LLa37E.js";
 import "./ports-DuqDiLKJ.js";
 import { a as hasFlag, i as getVerboseFlag, n as getCommandPath, o as hasHelpOrVersion, s as hasRootVersionAlias } from "./argv-BjELpvUc.js";
-import { i as getCoreCliCommandsWithSubcommands, n as setProgramContext, o as registerProgramCommands, s as getSubCliCommandsWithSubcommands } from "./program-context-i8Cj-_7p.js";
-import "./plugin-registry-Cwi4grd5.js";
-import { n as resolveCliChannelOptions } from "./channel-options-CXTa1ylu.js";
+import { i as getCoreCliCommandsWithSubcommands, n as setProgramContext, o as registerProgramCommands, s as getSubCliCommandsWithSubcommands } from "./program-context-CYF0khU6.js";
+import "./plugin-registry-D_AgXSnm.js";
+import { n as resolveCliChannelOptions } from "./channel-options-DomOAtAp.js";
 import process$1 from "node:process";
 import { fileURLToPath } from "node:url";
 import { Command, InvalidArgumentError } from "commander";
@@ -543,7 +543,7 @@ function loadConfigGuardModule() {
 	return configGuardModulePromise;
 }
 function loadPluginRegistryModule() {
-	pluginRegistryModulePromise ??= import("./plugin-registry-Cwi4grd5.js").then((n) => n.n);
+	pluginRegistryModulePromise ??= import("./plugin-registry-D_AgXSnm.js").then((n) => n.n);
 	return pluginRegistryModulePromise;
 }
 function getRootCommand(command) {

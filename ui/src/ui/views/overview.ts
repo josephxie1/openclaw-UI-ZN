@@ -6,7 +6,12 @@ import { formatRelativeTimestamp, formatDurationHuman } from "../format.ts";
 import type { GatewayHelloOk } from "../gateway.ts";
 import { avatarFromName } from "../helpers/multiavatar.ts";
 import type { UiSettings } from "../storage.ts";
-import type { GatewayAgentRow, SessionActivityResult, CostUsageSummary } from "../types.ts";
+import type {
+  GatewayAgentRow,
+  SessionActivityResult,
+  CostUsageSummary,
+  SessionsUsageResult,
+} from "../types.ts";
 import { resolveAgentAvatarSrc } from "./agents-utils.ts";
 import { shouldShowPairingHint } from "./overview-hints.ts";
 
@@ -14,6 +19,259 @@ import { shouldShowPairingHint } from "./overview-hints.ts";
 let _cachedCpu = 0;
 let _cachedMem = 0;
 let _systemStatsPending = false;
+
+// Module-level state for usage chart mode toggle
+let _usageChartMode: "1d" | "7d" | "ctx" = "7d";
+let _ctxTimeRange: "1d" | "7d" = "1d";
+let _usageAgentFilter = ""; // "" = all agents
+let _usageChartInstance: import("chart.js").Chart | null = null;
+
+async function initOrUpdateUsageChart(
+  canvas: HTMLCanvasElement,
+  labels: string[],
+  data: number[],
+  mode: "1d" | "7d",
+) {
+  const { Chart, registerables } = await import("chart.js");
+  Chart.register(...registerables);
+
+  const isDark = document.documentElement.dataset.theme === "dark";
+  const textColor = isDark ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.45)";
+  const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+
+  const formatTick = (val: number | string) => {
+    const n = typeof val === "string" ? Number(val) : val;
+    if (n >= 1_000_000) {
+      return `${(n / 1_000_000).toFixed(1)}M`;
+    }
+    if (n >= 1_000) {
+      return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1)}K`;
+    }
+    return String(n);
+  };
+
+  if (_usageChartInstance) {
+    _usageChartInstance.data.labels = labels;
+    _usageChartInstance.data.datasets[0].data = data;
+    // Update tick display for mode changes
+    const xAxis = _usageChartInstance.options.scales?.x;
+    if (xAxis && "ticks" in xAxis) {
+      (xAxis as Record<string, unknown>).maxTicksLimit = mode === "1d" ? 8 : undefined;
+    }
+    _usageChartInstance.update("none");
+    return;
+  }
+
+  _usageChartInstance = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          data,
+          borderColor: "#818cf8",
+          backgroundColor: (ctx) => {
+            const chart = ctx.chart;
+            const { ctx: c, chartArea } = chart;
+            if (!chartArea) {
+              return "rgba(129,140,248,0.1)";
+            }
+            const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            grad.addColorStop(0, "rgba(129,140,248,0.35)");
+            grad.addColorStop(1, "rgba(129,140,248,0.02)");
+            return grad;
+          },
+          fill: true,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: "#818cf8",
+          pointBorderColor: isDark ? "#1a1a2e" : "#fff",
+          pointBorderWidth: 1.5,
+          pointHoverRadius: 5,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark ? "rgba(20,20,40,0.95)" : "rgba(255,255,255,0.95)",
+          titleColor: isDark ? "#fff" : "#333",
+          bodyColor: isDark ? "rgba(255,255,255,0.8)" : "#555",
+          borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6,
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => `${(ctx.parsed.y ?? 0).toLocaleString()} tokens`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: textColor,
+            font: { size: 11 },
+            maxTicksLimit: mode === "1d" ? 8 : undefined,
+          },
+          border: { display: false },
+        },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: textColor,
+            font: { size: 11 },
+            callback: (val) => formatTick(val),
+            maxTicksLimit: 5,
+          },
+          border: { display: false },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
+}
+
+let _ctxChartInstance: import("chart.js").Chart | null = null;
+
+async function initOrUpdateCtxChart(
+  canvas: HTMLCanvasElement,
+  rows: Array<{ label: string; tokens: number; color: string }>,
+  sessionCount: number,
+) {
+  const { Chart, registerables } = await import("chart.js");
+  Chart.register(...registerables);
+
+  const isDark = document.documentElement.dataset.theme === "dark";
+  const textColor = isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)";
+  const gridColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+
+  const formatTick = (val: number | string) => {
+    const n = typeof val === "string" ? Number(val) : val;
+    if (n >= 1e6) {
+      return `${(n / 1e6).toFixed(1)}M`;
+    }
+    if (n >= 1e3) {
+      return `${(n / 1e3).toFixed(n >= 1e4 ? 0 : 1)}K`;
+    }
+    return String(n);
+  };
+
+  const labels = rows.map((r) => r.label);
+  const data = rows.map((r) => r.tokens);
+  const colors = rows.map((r) => r.color);
+
+  if (_ctxChartInstance) {
+    _ctxChartInstance.data.labels = labels;
+    _ctxChartInstance.data.datasets[0].data = data;
+    _ctxChartInstance.data.datasets[0].backgroundColor = colors;
+    _ctxChartInstance.update("none");
+    return;
+  }
+
+  _ctxChartInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: colors,
+          borderRadius: 4,
+          barThickness: 24,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: isDark ? "rgba(20,20,40,0.95)" : "rgba(255,255,255,0.95)",
+          titleColor: isDark ? "#fff" : "#333",
+          bodyColor: isDark ? "rgba(255,255,255,0.8)" : "#555",
+          borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 6,
+          displayColors: true,
+          callbacks: {
+            label: (ctx) => {
+              const total = (ctx.dataset.data as number[]).reduce((a, b) => a + (b ?? 0), 0);
+              const val = ctx.parsed.x ?? 0;
+              const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
+              return `${formatTick(val)} tokens (${pct}%)`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { color: gridColor },
+          ticks: { color: textColor, font: { size: 11 }, callback: (val) => formatTick(val) },
+          border: { display: false },
+          beginAtZero: true,
+          title:
+            sessionCount > 1
+              ? {
+                  display: true,
+                  text: `avg ${sessionCount} sessions`,
+                  color: textColor,
+                  font: { size: 10 },
+                }
+              : undefined,
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: textColor, font: { size: 12, weight: "bold" } },
+          border: { display: false },
+        },
+      },
+    },
+  });
+}
+
+function buildHourlyFromSessions(
+  result: SessionsUsageResult,
+): Array<{ hour: number; tokens: number }> {
+  const hourTotals = Array.from({ length: 24 }, () => 0);
+  for (const session of result.sessions) {
+    const usage = session.usage;
+    if (!usage || !usage.totalTokens || usage.totalTokens <= 0) {
+      continue;
+    }
+    const start = usage.firstActivity ?? session.updatedAt;
+    const end = usage.lastActivity ?? session.updatedAt;
+    if (!start || !end) {
+      continue;
+    }
+    const startMs = Math.min(start, end);
+    const endMs = Math.max(start, end);
+    const durationMs = Math.max(endMs - startMs, 1);
+    const totalMinutes = durationMs / 60000;
+    let cursor = startMs;
+    while (cursor < endMs) {
+      const date = new Date(cursor);
+      const hour = date.getHours();
+      const nextHour = new Date(date);
+      nextHour.setMinutes(59, 59, 999);
+      const nextMs = Math.min(nextHour.getTime(), endMs);
+      const minutes = Math.max((nextMs - cursor) / 60000, 0);
+      const share = minutes / totalMinutes;
+      hourTotals[hour] += usage.totalTokens * share;
+      cursor = nextMs + 1;
+    }
+  }
+  return hourTotals.map((tokens, hour) => ({ hour, tokens: Math.round(tokens) }));
+}
 
 export type OverviewProps = {
   connected: boolean;
@@ -36,6 +294,8 @@ export type OverviewProps = {
   sessionActivity: SessionActivityResult | null;
   agents: GatewayAgentRow[];
   costDaily: CostUsageSummary | null;
+  usageResult: SessionsUsageResult | null;
+  weekUsageResult: SessionsUsageResult | null;
 };
 
 export function renderOverview(props: OverviewProps) {
@@ -529,81 +789,289 @@ export function renderOverview(props: OverviewProps) {
         </div>`,
     usage: (() => {
       const daily = props.costDaily?.daily ?? [];
-      if (daily.length === 0) {
+      const hourly = props.usageResult ? buildHourlyFromSessions(props.usageResult) : [];
+      const hasWeekData = daily.length > 0;
+      const hasDayData = hourly.some((h) => h.tokens > 0);
+      const hasCtxData =
+        props.usageResult?.sessions?.some((s: Record<string, unknown>) => s.contextWeight) ?? false;
+      if (!hasWeekData && !hasDayData && !hasCtxData) {
         return html`
           <div data-swapy-slot="usage"><div data-swapy-item="usage"></div></div>
         `;
       }
 
-      const W = 520,
-        H = 160,
-        PL = 50,
-        PR = 10,
-        PT = 10,
-        PB = 30;
-      const cw = W - PL - PR,
-        ch = H - PT - PB;
-      const maxTokens = Math.max(...daily.map((d) => d.totalTokens ?? 0), 1);
+      // Collect unique agents from both results
+      const agentSet = new Set<string>();
+      for (const s of props.usageResult?.sessions ?? []) {
+        if (s.agentId) {
+          agentSet.add(s.agentId);
+        }
+      }
+      for (const s of props.weekUsageResult?.sessions ?? []) {
+        if (s.agentId) {
+          agentSet.add(s.agentId);
+        }
+      }
+      const agentList = Array.from(agentSet).toSorted();
+      const filterAgent = _usageAgentFilter;
+      const hasFilter = filterAgent !== "" && agentSet.has(filterAgent);
 
-      const points = daily.map((d, i) => {
-        const x = PL + (daily.length > 1 ? (i / (daily.length - 1)) * cw : cw / 2);
-        const y = PT + ch - ((d.totalTokens ?? 0) / maxTokens) * ch;
-        return { x, y, tokens: d.totalTokens ?? 0, date: d.date };
-      });
+      // Filter helper
+      const filterSessions = (sessions: SessionsUsageResult["sessions"]) =>
+        hasFilter ? sessions.filter((s) => s.agentId === filterAgent) : sessions;
 
-      const polyline = points.map((p) => `${p.x},${p.y}`).join(" ");
-      const area = `${PL},${PT + ch} ${polyline} ${points[points.length - 1].x},${PT + ch}`;
+      const mode = _usageChartMode;
+      let labels: string[] = [];
+      let data: number[] = [];
+      let subtitle = "";
+      const isChartMode = mode !== "ctx";
+      const fmtT = (n: number) =>
+        n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : String(n);
 
-      const gridLines = [0, 0.25, 0.5, 0.75, 1].map((f) => {
-        const y = PT + ch - f * ch;
-        const val = Math.round(f * maxTokens);
-        const label = val >= 1000 ? `${(val / 1000).toFixed(val >= 10000 ? 0 : 1)}K` : String(val);
-        return { y, label };
-      });
+      if (mode === "7d" && hasWeekData) {
+        if (hasFilter && props.weekUsageResult) {
+          // Recompute daily from filtered sessions
+          const now = new Date();
+          const dayMap = new Map<string, number>();
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(now.getTime() - (6 - i) * 86400000);
+            dayMap.set(d.toISOString().slice(0, 10), 0);
+          }
+          for (const s of filterSessions(props.weekUsageResult.sessions)) {
+            if (!s.updatedAt || !s.usage) {
+              continue;
+            }
+            const dateStr = new Date(s.updatedAt).toISOString().slice(0, 10);
+            if (dayMap.has(dateStr)) {
+              dayMap.set(dateStr, (dayMap.get(dateStr) ?? 0) + (s.usage.totalTokens ?? 0));
+            }
+          }
+          labels = Array.from(dayMap.keys()).map((d) => {
+            const dt = new Date(d + "T00:00:00");
+            return `${dt.getMonth() + 1}/${dt.getDate()}`;
+          });
+          data = Array.from(dayMap.values());
+        } else {
+          labels = daily.map((d) => {
+            const dt = new Date(d.date + "T00:00:00");
+            return `${dt.getMonth() + 1}/${dt.getDate()}`;
+          });
+          data = daily.map((d) => d.totalTokens ?? 0);
+        }
+        const total = data.reduce((a, b) => a + b, 0);
+        subtitle = `最近 ${daily.length} 天 · ${fmtT(total)} tokens`;
+      } else if (mode === "1d") {
+        if (hasFilter && props.usageResult) {
+          const hrs = Array.from({ length: 24 }, (_, i) => ({ hour: i, tokens: 0 }));
+          for (const s of filterSessions(props.usageResult.sessions)) {
+            if (!s.updatedAt || !s.usage) {
+              continue;
+            }
+            const h = new Date(s.updatedAt).getHours();
+            hrs[h].tokens += s.usage.totalTokens ?? 0;
+          }
+          labels = hrs.map((h) => `${h.hour}:00`);
+          data = hrs.map((h) => h.tokens);
+        } else {
+          labels = hourly.map((h) => `${h.hour}:00`);
+          data = hourly.map((h) => h.tokens);
+        }
+        const total = data.reduce((a, b) => a + b, 0);
+        subtitle = `今日（按小时）· ${fmtT(total)} tokens`;
+      } else if (mode === "ctx") {
+        subtitle = _ctxTimeRange === "7d" ? "上下文构成（7天）" : "上下文构成（今日）";
+      }
 
-      const dayLabels = points.map((p) => {
-        const d = new Date(p.date + "T00:00:00");
-        return { x: p.x, label: `${d.getMonth() + 1}/${d.getDate()}` };
-      });
+      if (isChartMode && data.length === 0) {
+        return html`
+          <div data-swapy-slot="usage"><div data-swapy-item="usage"></div></div>
+        `;
+      }
+
+      const onToggle = (next: "1d" | "7d" | "ctx") => {
+        if (next === "ctx" && _usageChartInstance) {
+          _usageChartInstance.destroy();
+          _usageChartInstance = null;
+        }
+        _usageChartMode = next;
+        const host = document.querySelector("openclaw-app");
+        if (host) {
+          (host as HTMLElement & { requestUpdate?: () => void }).requestUpdate?.();
+        }
+      };
+
+      if (isChartMode && data.length > 0) {
+        requestAnimationFrame(() => {
+          const canvas = document.getElementById("ov-usage-canvas") as HTMLCanvasElement | null;
+          if (!canvas) {
+            return;
+          }
+          void initOrUpdateUsageChart(canvas, labels, data, mode);
+        });
+      }
+
+      // Context breakdown for ctx mode
+      const CTP = 4;
+      let ctxHtml = html``;
+      if (mode === "ctx") {
+        let sC = 0,
+          kC = 0,
+          tC = 0,
+          fC = 0,
+          cnt = 0;
+        const ctxSource =
+          _ctxTimeRange === "7d"
+            ? (props.weekUsageResult?.sessions ?? [])
+            : (props.usageResult?.sessions ?? []);
+        const ctxSessions = hasFilter
+          ? ctxSource.filter((s) => s.agentId === filterAgent)
+          : ctxSource;
+        for (const s of ctxSessions) {
+          const cw = (s as Record<string, unknown>).contextWeight as
+            | Record<string, Record<string, number>>
+            | undefined;
+          if (!cw) {
+            continue;
+          }
+          sC += cw.systemPrompt?.chars ?? 0;
+          kC += cw.skills?.promptChars ?? 0;
+          tC += (cw.tools?.listChars ?? 0) + (cw.tools?.schemaChars ?? 0);
+          const wf = (cw as Record<string, unknown>).injectedWorkspaceFiles as
+            | Array<{ injectedChars: number }>
+            | undefined;
+          fC += (wf ?? []).reduce((a, f) => a + f.injectedChars, 0);
+          cnt++;
+        }
+        if (cnt > 1) {
+          sC = Math.round(sC / cnt);
+          kC = Math.round(kC / cnt);
+          tC = Math.round(tC / cnt);
+          fC = Math.round(fC / cnt);
+        }
+        const sy = Math.round(sC / CTP),
+          sk = Math.round(kC / CTP),
+          tl = Math.round(tC / CTP),
+          fl = Math.round(fC / CTP);
+        const tot = sy + sk + tl + fl;
+        const rows = [
+          { label: "System", tokens: sy, color: "#ff4d4d" },
+          { label: "Tools", tokens: tl, color: "#ffa64d" },
+          { label: "Skills", tokens: sk, color: "#4da6ff" },
+          { label: "Files", tokens: fl, color: "#4dff88" },
+        ];
+        if (tot > 0) {
+          requestAnimationFrame(() => {
+            const canvas = document.getElementById("ov-ctx-canvas") as HTMLCanvasElement | null;
+            if (!canvas) {
+              return;
+            }
+            void initOrUpdateCtxChart(canvas, rows, cnt);
+          });
+          const onCtxRange = (r: "1d" | "7d") => {
+            if (_ctxChartInstance) {
+              _ctxChartInstance.destroy();
+              _ctxChartInstance = null;
+            }
+            _ctxTimeRange = r;
+            const host = document.querySelector("openclaw-app");
+            if (host) {
+              (host as HTMLElement & { requestUpdate?: () => void }).requestUpdate?.();
+            }
+          };
+          ctxHtml = html`
+            <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+              <div class="usage-chart-toggle" style="font-size:11px">
+                <button class="${_ctxTimeRange === "1d" ? "active" : ""}" @click=${() => onCtxRange("1d")}>1d</button>
+                <button class="${_ctxTimeRange === "7d" ? "active" : ""}" @click=${() => onCtxRange("7d")}>7d</button>
+              </div>
+            </div>
+            <div style="position:relative;height:165px">
+              <canvas id="ov-ctx-canvas"></canvas>
+            </div>`;
+        } else {
+          ctxHtml = html`
+            <div class="muted" style="padding: 20px; text-align: center">无上下文数据</div>
+          `;
+        }
+      }
 
       return html`
         <div data-swapy-slot="usage">
           <div data-swapy-item="usage">
             <div class="card ov-card--usage">
-              <div class="card-header-row">${dragHandleFree}
-                <div><div class="card-title">令牌用量趋势</div>
-                <div class="card-sub">最近 ${daily.length} 天</div></div>
+              <div class="card-header-row">${dragHandleOnly}
+                <div style="flex:1"><div class="card-title">${mode === "ctx" ? "上下文构成" : "令牌用量趋势"}</div>
+                <div class="card-sub">${subtitle}</div></div>
+                ${
+                  agentList.length > 1
+                    ? html`
+                  <div class="ov-agent-dropdown">
+                    <button class="ov-agent-btn" @click=${(e: Event) => {
+                      const menu = (e.currentTarget as HTMLElement)
+                        .nextElementSibling as HTMLElement;
+                      const isOpen = menu.classList.toggle("open");
+                      if (isOpen) {
+                        const close = (ev: MouseEvent) => {
+                          if (
+                            !(e.currentTarget as HTMLElement)?.parentElement?.contains(
+                              ev.target as Node,
+                            )
+                          ) {
+                            menu.classList.remove("open");
+                            document.removeEventListener("click", close);
+                          }
+                        };
+                        requestAnimationFrame(() => document.addEventListener("click", close));
+                      }
+                    }}>
+                      ${filterAgent || "全部 Agent"}
+                      <span class="ov-agent-arrow">▾</span>
+                    </button>
+                    <div class="ov-agent-menu">
+                      ${[
+                        { value: "", label: "全部 Agent" },
+                        ...agentList.map((a) => ({ value: a, label: a })),
+                      ].map(
+                        (opt) => html`
+                        <div class="ov-agent-option ${opt.value === filterAgent ? "selected" : ""}" @click=${() => {
+                          _usageAgentFilter = opt.value;
+                          if (_usageChartInstance) {
+                            _usageChartInstance.destroy();
+                            _usageChartInstance = null;
+                          }
+                          if (_ctxChartInstance) {
+                            _ctxChartInstance.destroy();
+                            _ctxChartInstance = null;
+                          }
+                          const host = document.querySelector("openclaw-app");
+                          if (host) {
+                            (
+                              host as HTMLElement & { requestUpdate?: () => void }
+                            ).requestUpdate?.();
+                          }
+                        }}>${opt.value === filterAgent ? "✓ " : ""}${opt.label}</div>
+                      `,
+                      )}
+                    </div>
+                  </div>
+                `
+                    : nothing
+                }
+                <div class="usage-chart-toggle">
+                  <button class="${mode === "1d" ? "active" : ""}" @click=${() => onToggle("1d")}>1d</button>
+                  <button class="${mode === "7d" ? "active" : ""}" @click=${() => onToggle("7d")}>7d</button>
+                  <button class="${mode === "ctx" ? "active" : ""}" @click=${() => onToggle("ctx")}>ctx</button>
+                </div>
               </div>
-              <div class="usage-line-chart" style="margin-top: 12px;">
-                <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" width="100%" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="ov-usage-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.4" />
-                      <stop offset="100%" stop-color="#818cf8" stop-opacity="0.02" />
-                    </linearGradient>
-                  </defs>
-                  ${gridLines.map(
-                    (g) => html`
-                    <line x1="${PL}" y1="${g.y}" x2="${W - PR}" y2="${g.y}" stroke="var(--surface-alt, rgba(255,255,255,0.08))" stroke-width="0.5" />
-                    <text x="${PL - 6}" y="${g.y + 3}" text-anchor="end" fill="var(--text-muted, #888)" font-size="10">${g.label}</text>
-                  `,
-                  )}
-                  <polygon points="${area}" fill="url(#ov-usage-grad)" />
-                  <polyline points="${polyline}" fill="none" stroke="#818cf8" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-                  ${points.map(
-                    (p) => html`
-                    <circle cx="${p.x}" cy="${p.y}" r="3" fill="#818cf8" stroke="var(--surface, #1a1a2e)" stroke-width="1.5">
-                      <title>${p.date}: ${p.tokens.toLocaleString()} tokens</title>
-                    </circle>
-                  `,
-                  )}
-                  ${dayLabels.map(
-                    (d) => html`
-                    <text x="${d.x}" y="${H - 6}" text-anchor="middle" fill="var(--text-muted, #888)" font-size="10">${d.label}</text>
-                  `,
-                  )}
-                </svg>
-              </div>
+              ${
+                isChartMode
+                  ? html`
+                      <div class="usage-line-chart" style="margin-top: 12px; position: relative; height: 200px">
+                        <canvas id="ov-usage-canvas"></canvas>
+                      </div>
+                    `
+                  : html`<div style="margin-top:12px;padding:0 4px 4px">${ctxHtml}</div>`
+              }
             </div>
           </div>
         </div>`;

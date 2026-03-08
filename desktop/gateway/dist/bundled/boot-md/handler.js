@@ -9,7 +9,7 @@ import "../../env-DijpAkAH.js";
 import "../../boolean-M-esQJt6.js";
 import "../../dock-DUCzi1P7.js";
 import { n as SILENT_REPLY_TOKEN } from "../../tokens-DhiG-E4H.js";
-import { a as createDefaultDeps, i as agentCommand } from "../../pi-embedded-Dp6WYZdz.js";
+import { a as createDefaultDeps, i as agentCommand } from "../../pi-embedded-DzwMw9AI.js";
 import "../../plugins-tZMHqQXn.js";
 import "../../accounts-CaRtAz_2.js";
 import "../../bindings-CVne_Hrz.js";
