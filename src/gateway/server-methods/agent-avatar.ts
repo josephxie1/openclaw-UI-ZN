@@ -3,7 +3,6 @@ import path from "node:path";
 import { resolveAgentWorkspaceDir } from "../../agents/agent-scope.js";
 import { loadConfig } from "../../config/config.js";
 import { normalizeAgentId } from "../../routing/session-key.js";
-import { resolveUserPath } from "../../utils.js";
 import { ErrorCodes, errorShape } from "../protocol/index.js";
 import type { GatewayRequestHandlers } from "./types.js";
 
@@ -38,10 +37,9 @@ function decodeDataUri(dataUri: string): { buffer: Buffer; ext: string } | null 
 
 export const agentAvatarHandlers: GatewayRequestHandlers = {
   "agent.avatar.save": ({ params, respond }) => {
-    const p = params as { agentId?: string; dataUri?: string; workspace?: string } | undefined;
+    const p = params as { agentId?: string; dataUri?: string } | undefined;
     const agentIdRaw = typeof p?.agentId === "string" ? p.agentId.trim() : "";
     const dataUri = typeof p?.dataUri === "string" ? p.dataUri : "";
-    const workspaceRaw = typeof p?.workspace === "string" ? p.workspace.trim() : "";
 
     if (!agentIdRaw) {
       respond(false, undefined, errorShape(ErrorCodes.INVALID_REQUEST, "agentId is required"));
@@ -69,13 +67,8 @@ export const agentAvatarHandlers: GatewayRequestHandlers = {
     const agentId = normalizeAgentId(agentIdRaw);
     const cfg = loadConfig();
 
-    // Resolve workspace directory
-    let workspaceDir: string;
-    if (workspaceRaw) {
-      workspaceDir = resolveUserPath(workspaceRaw);
-    } else {
-      workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
-    }
+    // Gateway resolves workspace automatically based on OPENCLAW_HOME / config
+    const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
 
     // Ensure workspace directory exists
     try {
