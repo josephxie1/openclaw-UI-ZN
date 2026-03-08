@@ -2524,7 +2524,6 @@
 
 /* Swapy drag feedback */
 [data-swapy-item] {
-  transition: transform 0.2s ease, opacity 0.2s ease;
   cursor: grab;
 }
 
@@ -2532,8 +2531,22 @@
   cursor: grabbing;
 }
 
+/* Being dragged — elevated, slightly scaled */
+[data-swapy-dragging] {
+  z-index: 100;
+  opacity: 0.9;
+  transform: scale(1.02);
+  filter: drop-shadow(0 12px 32px rgba(0, 0, 0, 0.25));
+}
+
+[data-swapy-dragging] .card {
+  border-color: var(--accent);
+}
+
+/* Slot that will receive the dragged card */
 [data-swapy-highlighted] {
   outline: 2px dashed var(--accent);
   outline-offset: 4px;
   border-radius: var(--radius-xl);
+  background: var(--secondary);
 }
