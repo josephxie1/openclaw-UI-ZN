@@ -204,6 +204,23 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth theme switch for key UI surfaces */
+.sidebar,
+.content,
+.card,
+.stat,
+.callout,
+.activity-card,
+.nav-group,
+.topbar,
+input,
+select,
+textarea,
+button {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 /* Theme transition */
