@@ -68,6 +68,14 @@ export class OcDefaultModelConfig extends LitElement {
               onToggle: () => {
                 this._defOpen = !this._defOpen;
                 this._imgOpen = false;
+                if (this._defOpen) {
+                  const close = () => {
+                    this._defOpen = false;
+                  };
+                  requestAnimationFrame(() =>
+                    document.addEventListener("click", close, { once: true }),
+                  );
+                }
               },
               onSelect: (value: string) => {
                 this._defOpen = false;
@@ -120,6 +128,14 @@ export class OcDefaultModelConfig extends LitElement {
                     onToggle: () => {
                       this._imgOpen = !this._imgOpen;
                       this._defOpen = false;
+                      if (this._imgOpen) {
+                        const close = () => {
+                          this._imgOpen = false;
+                        };
+                        requestAnimationFrame(() =>
+                          document.addEventListener("click", close, { once: true }),
+                        );
+                      }
                     },
                     onSelect: (value: string) => {
                       this._imgOpen = false;
