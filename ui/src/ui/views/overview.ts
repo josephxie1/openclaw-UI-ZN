@@ -196,7 +196,7 @@ export function renderOverview(props: OverviewProps) {
   const currentLocale = i18n.getLocale();
 
   const dragHandle = html`
-    <button class="swapy-handle" data-swapy-handle title="${t("overview.drag.hint") ?? "拖拽交换位置"}">
+    <button class="swapy-handle" title="${t("overview.drag.hint") ?? "拖拽交换位置"}">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/>
         <circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/>
