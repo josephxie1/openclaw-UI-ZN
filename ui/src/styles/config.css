@@ -2563,6 +2563,42 @@
    Overview Card Color Variants
    =========================================== */
 
+/* Shared: inner elements inherit transparent backgrounds */
+[class*="ov-card--"] .stat {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[class*="ov-card--"] .stat-grid {
+  background: transparent;
+}
+
+[class*="ov-card--"] .callout {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+[class*="ov-card--"] .activity-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[class*="ov-card--"] .activity-card__key {
+  color: inherit;
+}
+
+[class*="ov-card--"] .form-grid {
+  background: transparent;
+}
+
+[class*="ov-card--"] .note-grid {
+  background: transparent;
+}
+
+[class*="ov-card--"] .mono {
+  color: inherit;
+}
+
 /* Access — Blue / Indigo */
 .ov-card--access {
   background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
