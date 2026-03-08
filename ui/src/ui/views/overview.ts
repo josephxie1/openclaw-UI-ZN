@@ -398,7 +398,7 @@ export function renderOverview(props: OverviewProps) {
                 <div class="card-sub">${t("overview.snapshot.subtitle")}</div></div>
               </div>
               <div class="snapshot-charts">
-                ${renderDonutChart(props.connected ? 100 : 0, t("overview.snapshot.status"), props.connected ? t("common.ok") : t("common.offline"))}
+                ${renderDonutChart(props.connected ? 100 : 0, t("overview.snapshot.status"), props.connected ? t("common.ok") : t("common.offline"), props.connected ? "#34d399" : "#ff6b6b")}
                 ${renderDonutChart(100, t("overview.snapshot.uptime"), uptime, "#a7f3d0")}
                 ${renderDonutChart(cpuPercent, "CPU", `${cpuPercent}%`)}
                 ${renderDonutChart(memPercent, "内存", `${memPercent}%`)}
