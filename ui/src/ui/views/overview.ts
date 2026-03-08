@@ -301,9 +301,9 @@ export function renderOverview(props: OverviewProps) {
   /** Display-only cards — entire card is draggable, icon is decorative */
   const dragHandleFree = html`<button class="swapy-handle" title="${t("overview.drag.hint") ?? "拖拽交换位置"}">${handleSvg}</button>`;
 
-  return html`
-    <oc-overview-layout>
-      <div class="overview-swapy">
+  // --- Build each card as a keyed template ---
+  const cards: Record<string, ReturnType<typeof html>> = {
+    snapshot: html`
         <div data-swapy-slot="snapshot">
           <div data-swapy-item="snapshot">
             <div class="card ov-card--snapshot">
@@ -332,8 +332,8 @@ export function renderOverview(props: OverviewProps) {
               }
             </div>
           </div>
-        </div>
-
+        </div>`,
+    access: html`
         <div data-swapy-slot="access">
           <div data-swapy-item="access">
             <div class="card ov-card--access">
@@ -341,52 +341,47 @@ export function renderOverview(props: OverviewProps) {
                 <div><div class="card-title">${t("overview.access.title")}</div>
                 <div class="card-sub">${t("overview.access.subtitle")}</div></div>
               </div>
-              <div class="form-grid" style="margin-top: 16px;">
+              <div class="fields" style="margin-top: 14px;">
                 <label class="field">
-                  <span>${t("overview.access.wsUrl")}</span>
+                  <span>WebSocket URL</span>
                   <input
+                    type="text"
                     .value=${props.settings.gatewayUrl}
-                    @input=${(e: Event) => {
+                    @change=${(e: Event) => {
                       const v = (e.target as HTMLInputElement).value;
                       props.onSettingsChange({ ...props.settings, gatewayUrl: v });
                     }}
-                    placeholder="ws://100.x.y.z:18789"
                   />
                 </label>
-                ${
-                  isTrustedProxy
-                    ? ""
-                    : html`
-                      <label class="field">
-                        <span>${t("overview.access.token")}</span>
-                        <input
-                          .value=${props.settings.token}
-                          @input=${(e: Event) => {
-                            const v = (e.target as HTMLInputElement).value;
-                            props.onSettingsChange({ ...props.settings, token: v });
-                          }}
-                          placeholder="OPENCLAW_GATEWAY_TOKEN"
-                        />
-                      </label>
-                      <label class="field">
-                        <span>${t("overview.access.password")}</span>
-                        <input
-                          type="password"
-                          .value=${props.password}
-                          @input=${(e: Event) => {
-                            const v = (e.target as HTMLInputElement).value;
-                            props.onPasswordChange(v);
-                          }}
-                          placeholder="system or shared password"
-                        />
-                      </label>
-                    `
-                }
                 <label class="field">
-                  <span>${t("overview.access.sessionKey")}</span>
+                  <span>${t("overview.access.gatewayToken")}</span>
                   <input
-                    .value=${props.settings.sessionKey}
-                    @input=${(e: Event) => {
+                    type="text"
+                    .value=${props.settings.token}
+                    @change=${(e: Event) => {
+                      const v = (e.target as HTMLInputElement).value;
+                      props.onSettingsChange({ ...props.settings, token: v });
+                    }}
+                  />
+                </label>
+                <label class="field">
+                  <span>${t("overview.access.password")} (${t("overview.access.notStored")})</span>
+                  <input
+                    type="password"
+                    placeholder="system or shared password"
+                    .value=${props.password}
+                    @change=${(e: Event) => {
+                      const v = (e.target as HTMLInputElement).value;
+                      props.onPasswordChange(v);
+                    }}
+                  />
+                </label>
+                <label class="field">
+                  <span>${t("overview.access.defaultSessionKey")}</span>
+                  <input
+                    type="text"
+                    .value=${props.settings.sessionKey ?? ""}
+                    @change=${(e: Event) => {
                       const v = (e.target as HTMLInputElement).value;
                       props.onSessionKeyChange(v);
                     }}
@@ -420,9 +415,8 @@ export function renderOverview(props: OverviewProps) {
               </div>
             </div>
           </div>
-        </div>
-
-
+        </div>`,
+    agents: html`
         <div data-swapy-slot="agents">
           <div data-swapy-item="agents">
             <div class="card">
@@ -446,8 +440,8 @@ export function renderOverview(props: OverviewProps) {
               </div>
             </div>
           </div>
-        </div>
-
+        </div>`,
+    activity: html`
         <div data-swapy-slot="activity">
           <div data-swapy-item="activity">
             <div class="card ov-card--activity">
@@ -521,8 +515,29 @@ export function renderOverview(props: OverviewProps) {
               }
             </div>
           </div>
-        </div>
+        </div>`,
+  };
 
+  // Render cards in saved order (from localStorage), falling back to default
+  const defaultOrder = ["snapshot", "access", "agents", "activity"];
+  let cardOrder = defaultOrder;
+  try {
+    const saved = localStorage.getItem("oc-overview-card-order-v2");
+    if (saved) {
+      const parsed = JSON.parse(saved) as Array<{ slot: string; item: string }>;
+      const order = parsed.map((e) => e.slot).filter((s) => s in cards);
+      if (order.length === defaultOrder.length) {
+        cardOrder = order;
+      }
+    }
+  } catch {
+    /* use default */
+  }
+
+  return html`
+    <oc-overview-layout>
+      <div class="overview-swapy">
+        ${cardOrder.map((slot) => cards[slot])}
       </div>
     </oc-overview-layout>
   `;
