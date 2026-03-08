@@ -25,13 +25,17 @@ function normalizeAvatarValue(value: string | undefined | null): string | null {
 }
 
 function resolveAvatarSource(cfg: OpenClawConfig, agentId: string): string | null {
-  const fromConfig = normalizeAvatarValue(resolveAgentIdentity(cfg, agentId)?.avatar);
+  const identity = resolveAgentIdentity(cfg, agentId);
+  const fromConfig =
+    normalizeAvatarValue(identity?.avatar) ?? normalizeAvatarValue(identity?.emoji);
   if (fromConfig) {
     return fromConfig;
   }
   const workspace = resolveAgentWorkspaceDir(cfg, agentId);
-  const fromIdentity = normalizeAvatarValue(loadAgentIdentityFromWorkspace(workspace)?.avatar);
-  return fromIdentity;
+  const fileIdentity = loadAgentIdentityFromWorkspace(workspace);
+  const fromFile =
+    normalizeAvatarValue(fileIdentity?.avatar) ?? normalizeAvatarValue(fileIdentity?.emoji);
+  return fromFile;
 }
 
 function resolveExistingPath(value: string): string {

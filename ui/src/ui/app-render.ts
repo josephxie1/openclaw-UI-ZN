@@ -961,13 +961,31 @@ export function renderApp(state: AppViewState) {
                         // 2. Create agent if needed
                         const agentIdToUse = f.createAgent ? f.agentId || accountId : "";
                         if (f.createAgent && f.agentId === "") {
-                          // New agent
+                          // New agent — save avatar as file if it's a data URI
+                          let avatarValue: string = f.agentEmoji;
+                          const isDataUri = /^data:image\//i.test(f.agentEmoji);
+                          if (isDataUri && state.client) {
+                            try {
+                              const res = await state.client.request("agent.avatar.save", {
+                                agentId: accountId,
+                                dataUri: f.agentEmoji,
+                                workspace: `~/.openclaw/workspace-${accountId}`,
+                              });
+                              const saved = res as { path?: string } | null;
+                              if (saved?.path) {
+                                avatarValue = saved.path;
+                              }
+                            } catch {
+                              // Fallback: keep data URI if save fails
+                            }
+                          }
+
                           const newAgent: Record<string, unknown> = {
                             id: accountId,
                             workspace: `~/.openclaw/workspace-${accountId}`,
                             identity: {
                               name: f.agentName.trim() || accountId,
-                              emoji: f.agentEmoji,
+                              avatar: avatarValue,
                             },
                           };
                           if (f.agentModel) {
