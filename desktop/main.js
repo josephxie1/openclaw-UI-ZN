@@ -88,7 +88,7 @@ function buildMinimalConfig(workspaceDir) {
     agents: {
       defaults: {
         workspace: workspaceDir,
-        skipBootstrap: true,
+        skipBootstrap: false,
       },
       list: [
         {
