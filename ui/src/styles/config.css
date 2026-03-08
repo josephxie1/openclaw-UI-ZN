@@ -2572,8 +2572,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px 12px;
+  gap: 6px;
+  padding: 10px 8px;
   border-radius: var(--radius-lg);
   background: var(--secondary);
   border: 1px solid var(--border);
