@@ -961,6 +961,20 @@ export function renderApp(state: AppViewState) {
                         // 2. Create agent if needed
                         const agentIdToUse = f.createAgent ? f.agentId || accountId : "";
                         if (f.createAgent && f.agentId === "") {
+                          // Derive workspace from agents.defaults.workspace
+                          const agentsDefaults = (
+                            (state.configForm as Record<string, unknown>)?.agents as Record<
+                              string,
+                              unknown
+                            >
+                          )?.defaults as Record<string, unknown> | undefined;
+                          const defaultWs =
+                            typeof agentsDefaults?.workspace === "string"
+                              ? agentsDefaults.workspace
+                              : "~/.openclaw/workspace";
+                          // Append -accountId to the base workspace path
+                          const agentWorkspace = defaultWs.replace(/\/?$/, "") + `-${accountId}`;
+
                           // New agent — save avatar as file if it's a data URI
                           let avatarValue: string = f.agentEmoji;
                           const isDataUri = /^data:image\//i.test(f.agentEmoji);
@@ -969,7 +983,7 @@ export function renderApp(state: AppViewState) {
                               const res = await state.client.request("agent.avatar.save", {
                                 agentId: accountId,
                                 dataUri: f.agentEmoji,
-                                workspace: `~/.openclaw/workspace-${accountId}`,
+                                workspace: agentWorkspace,
                               });
                               const saved = res as { path?: string } | null;
                               if (saved?.path) {
@@ -982,7 +996,7 @@ export function renderApp(state: AppViewState) {
 
                           const newAgent: Record<string, unknown> = {
                             id: accountId,
-                            workspace: `~/.openclaw/workspace-${accountId}`,
+                            workspace: agentWorkspace,
                             identity: {
                               name: f.agentName.trim() || accountId,
                               avatar: avatarValue,
