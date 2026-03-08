@@ -17,7 +17,7 @@ export type DefaultModelConfigProps = {
 
 export function renderDefaultModelConfig(props: DefaultModelConfigProps) {
   return html`
-    <section class="card" style="margin-bottom: 18px;">
+    <section class="card" style="margin-top: 18px;">
       <div>
         <div class="card-title">${t("defaultModelConfig.title") ?? "默认模型配置"}</div>
         <div class="card-sub">${t("defaultModelConfig.subtitle") ?? "选择默认使用的主模型和图像理解模型"}</div>

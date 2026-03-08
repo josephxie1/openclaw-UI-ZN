@@ -290,6 +290,18 @@ export const zh_CN: TranslationMap = {
     imageSupport: "图片",
     imageToggle: "图片理解",
   },
+  defaultModelConfig: {
+    title: "默认模型配置",
+    subtitle: "选择默认使用的主模型和图像理解模型",
+    primaryModel: "主模型",
+    primaryModelHint: "所有 Agent 默认使用的对话模型",
+    imageModel: "图像理解模型",
+    imageModelHint: "用于自动识别用户发送的图片内容",
+    notSet: "— 未设置 —",
+    disabled: "— 关闭 —",
+    noVisionModels: "暂无支持图像的模型",
+    noVisionModelsHint: "请先添加支持图像输入的模型",
+  },
   channelsQuickAdd: {
     title: "快速添加渠道",
     subtitle: "快速添加 Telegram 或飞书机器人并绑定Agent。",
